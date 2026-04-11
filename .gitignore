@@ -1,0 +1,44 @@
+# Xcode
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# CocoaPods
+Pods/
+
+# OS
+.DS_Store
+*.swp
+*~
+
+# Superpowers brainstorming
+.superpowers/
+
+# Worktrees
+.worktrees/
+
+# Supabase
+supabase/.temp/
+
+# Secrets
+Secrets.xcconfig
+
+# Docs (specs & plans)
+docs/
