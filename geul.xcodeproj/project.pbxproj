@@ -10,6 +10,10 @@
 		B7F3A1D2E4C6089B00000020 /* GeulApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000010 /* GeulApp.swift */; };
 		B7F3A1D2E4C6089B00000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000011 /* ContentView.swift */; };
 		B7F3A1D2E4C6089B00000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000012 /* Assets.xcassets */; };
+		B7F3A1D2E4C6089B00000024 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000014 /* MarkdownRenderer.swift */; };
+		B7F3A1D2E4C6089B00000025 /* HTMLTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000015 /* HTMLTemplate.swift */; };
+		B7F3A1D2E4C6089B00000026 /* MarkdownWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */; };
+		B7F3A1D2E4C6089B00000028 /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000017 /* Resources */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,6 +21,10 @@
 		B7F3A1D2E4C6089B00000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000013 /* geul.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = geul.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B7F3A1D2E4C6089B00000014 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000015 /* HTMLTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLTemplate.swift; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownWebView.swift; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000017 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,6 +51,10 @@
 			children = (
 				B7F3A1D2E4C6089B00000010 /* GeulApp.swift */,
 				B7F3A1D2E4C6089B00000011 /* ContentView.swift */,
+				B7F3A1D2E4C6089B00000014 /* MarkdownRenderer.swift */,
+				B7F3A1D2E4C6089B00000015 /* HTMLTemplate.swift */,
+				B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */,
+				B7F3A1D2E4C6089B00000017 /* Resources */,
 				B7F3A1D2E4C6089B00000012 /* Assets.xcassets */,
 			);
 			path = geul;
@@ -115,6 +127,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B7F3A1D2E4C6089B00000022 /* Assets.xcassets in Resources */,
+				B7F3A1D2E4C6089B00000028 /* Resources in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,6 +140,9 @@
 			files = (
 				B7F3A1D2E4C6089B00000020 /* GeulApp.swift in Sources */,
 				B7F3A1D2E4C6089B00000021 /* ContentView.swift in Sources */,
+				B7F3A1D2E4C6089B00000024 /* MarkdownRenderer.swift in Sources */,
+				B7F3A1D2E4C6089B00000025 /* HTMLTemplate.swift in Sources */,
+				B7F3A1D2E4C6089B00000026 /* MarkdownWebView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

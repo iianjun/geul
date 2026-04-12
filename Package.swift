@@ -7,7 +7,9 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "geul",
-            path: "geul"
+            path: "geul",
+            exclude: ["Assets.xcassets", "geul.entitlements"],
+            resources: [.copy("Resources")]
         ),
     ]
 )
