@@ -16,6 +16,7 @@ struct GeulApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(fileURL: fileURL)
+                .navigationTitle(fileURL?.lastPathComponent ?? "geul")
         }
         .defaultSize(width: 900, height: 700)
     }

@@ -48,8 +48,15 @@ struct ContentView: View {
 
         do {
             let markdown = try String(contentsOf: fileURL, encoding: .utf8)
-            let htmlBody = MarkdownRenderer.render(markdown)
-            html = HTMLTemplate.compose(body: htmlBody, title: fileURL.lastPathComponent)
+            let title = fileURL.lastPathComponent
+            let rendered = await withCheckedContinuation { (continuation: CheckedContinuation<String, Never>) in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let body = MarkdownRenderer.render(markdown)
+                    let result = HTMLTemplate.compose(body: body, title: title)
+                    continuation.resume(returning: result)
+                }
+            }
+            html = rendered
             isLoading = false
         } catch {
             isLoading = false

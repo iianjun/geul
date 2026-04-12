@@ -65,6 +65,23 @@ private extension HTMLTemplate {
         --radius-lg: 12px;
     }
 
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-primary: #1c1917;
+            --bg-secondary: #292524;
+            --bg-code: #292524;
+            --bg-code-border: #2dd4bf;
+            --text-primary: #fafaf9;
+            --text-secondary: #a8a29e;
+            --text-tertiary: #78716c;
+            --accent: #2dd4bf;
+            --accent-soft: rgba(45, 212, 191, 0.08);
+            --border: #44403c;
+            --border-strong: #57534e;
+            --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+    }
+
     * {
         margin: 0;
         padding: 0;
@@ -87,8 +104,6 @@ private extension HTMLTemplate {
     }
 
     .markdown-body {
-        max-width: 720px;
-        margin: 0 auto;
         padding: 48px 32px 96px;
     }
 
