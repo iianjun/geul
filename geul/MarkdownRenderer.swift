@@ -3,7 +3,7 @@ import JavaScriptCore
 
 enum MarkdownRenderer {
     private static let context: JSContext = {
-        let ctx = JSContext()!
+        guard let ctx = JSContext() else { return JSContext() }
 
         // Load marked.js
         if let markedURL = Bundle.main.url(forResource: "marked.min", withExtension: "js", subdirectory: "Resources"),
@@ -90,7 +90,10 @@ enum MarkdownRenderer {
         }
 
         // KaTeX post-process
-        if let katexResult = context.evaluateScript("renderKaTeX(`\(html.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "`", with: "\\`"))`)"),
+        let katexEscaped = html
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "`", with: "\\`")
+        if let katexResult = context.evaluateScript("renderKaTeX(`\(katexEscaped)`)"),
            let katexHTML = katexResult.toString() {
             html = katexHTML
         }
