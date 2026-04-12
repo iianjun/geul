@@ -17,6 +17,7 @@ struct GeulApp: App {
         WindowGroup {
             ContentView(fileURL: fileURL)
                 .navigationTitle(fileURL?.lastPathComponent ?? "geul")
+                .frame(minWidth: 500, minHeight: 300)
         }
         .defaultSize(width: 900, height: 700)
     }
