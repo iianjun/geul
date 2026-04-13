@@ -29,8 +29,16 @@ enum HTMLTemplate {
         """
     }
 
+    private static let resourceBundle: Bundle = {
+        #if SWIFT_PACKAGE
+        return Bundle.module
+        #else
+        return Bundle.main
+        #endif
+    }()
+
     private static func loadResource(_ name: String, ext: String) -> String? {
-        guard let url = Bundle.main.url(
+        guard let url = resourceBundle.url(
             forResource: name,
             withExtension: ext,
             subdirectory: "Resources"

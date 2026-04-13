@@ -2,43 +2,58 @@ import Foundation
 import JavaScriptCore
 
 enum MarkdownRenderer {
+    private static let resourceBundle: Bundle = {
+        #if SWIFT_PACKAGE
+        return Bundle.module
+        #else
+        return Bundle.main
+        #endif
+    }()
+
     private static let context: JSContext = {
         guard let ctx = JSContext() else { return JSContext() }
 
+        ctx.exceptionHandler = { _, exception in
+            if let msg = exception?.toString() {
+                print("[JSCore] \(msg)")
+            }
+        }
+
         // Load marked.js
-        if let markedURL = Bundle.main.url(forResource: "marked.min", withExtension: "js", subdirectory: "Resources"),
-           let markedJS = try? String(contentsOf: markedURL, encoding: .utf8) {
-            ctx.evaluateScript(markedJS)
+        if let url = resourceBundle.url(forResource: "marked.min", withExtension: "js", subdirectory: "Resources"),
+           let script = try? String(contentsOf: url, encoding: .utf8) {
+            ctx.evaluateScript(script)
         }
 
         // Load highlight.js
-        if let hlURL = Bundle.main.url(forResource: "highlight.min", withExtension: "js", subdirectory: "Resources"),
-           let hlJS = try? String(contentsOf: hlURL, encoding: .utf8) {
-            ctx.evaluateScript(hlJS)
+        if let url = resourceBundle.url(forResource: "highlight.min", withExtension: "js", subdirectory: "Resources"),
+           let script = try? String(contentsOf: url, encoding: .utf8) {
+            ctx.evaluateScript(script)
         }
 
         // Load KaTeX
-        if let katexURL = Bundle.main.url(forResource: "katex.min", withExtension: "js", subdirectory: "Resources"),
-           let katexJS = try? String(contentsOf: katexURL, encoding: .utf8) {
-            ctx.evaluateScript(katexJS)
+        if let url = resourceBundle.url(forResource: "katex.min", withExtension: "js", subdirectory: "Resources"),
+           let script = try? String(contentsOf: url, encoding: .utf8) {
+            ctx.evaluateScript(script)
         }
 
-        // Configure marked with highlight.js integration and mermaid placeholder
+        // Configure marked
         ctx.evaluateScript("""
         (function() {
             const renderer = new marked.Renderer();
 
-            // Mermaid code blocks → loading placeholder (will be rendered in WebView)
-            const originalCode = renderer.code;
             renderer.code = function({ text, lang }) {
                 if (lang === 'mermaid') {
-                    const escaped = text.replace(/&/g, '&amp;')
-                                        .replace(/</g, '&lt;')
-                                        .replace(/>/g, '&gt;');
+                    var escaped = text.replace(/&/g, '&amp;')
+                                      .replace(/</g, '&lt;')
+                                      .replace(/>/g, '&gt;');
                     return '<div class="mermaid-container">' +
-                           '<div class="mermaid-loading"><div class="spinner"></div></div>' +
-                           '<pre class="mermaid" style="display:none;">' + escaped + '</pre>' +
-                           '</div>';
+                           '<div class="geul-loading">' +
+                           '<div class="bar"></div><div class="bar"></div>' +
+                           '<div class="bar"></div><div class="bar"></div>' +
+                           '</div>' +
+                           '<pre class="mermaid" style="display:none;">' +
+                           escaped + '</pre></div>';
                 }
                 return false;
             };
@@ -46,30 +61,11 @@ enum MarkdownRenderer {
             marked.use({
                 renderer: renderer,
                 gfm: true,
-                breaks: false,
-                highlight: function(code, lang) {
-                    if (lang && hljs.getLanguage(lang)) {
-                        return hljs.highlight(code, { language: lang }).value;
-                    }
-                    return hljs.highlightAuto(code).value;
-                }
+                breaks: false
             });
 
-            // KaTeX inline/block rendering helper
-            globalThis.renderKaTeX = function(text) {
-                // Block math: $$...$$
-                text = text.replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, function(match, math) {
-                    try {
-                        return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
-                    } catch(e) { return match; }
-                });
-                // Inline math: $...$  (not preceded/followed by $)
-                text = text.replace(/(?<!\\$)\\$(?!\\$)(.+?)(?<!\\$)\\$(?!\\$)/g, function(match, math) {
-                    try {
-                        return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
-                    } catch(e) { return match; }
-                });
-                return text;
+            globalThis.renderMarkdown = function(input) {
+                return marked.parse(input);
             };
         })();
         """)
@@ -78,24 +74,13 @@ enum MarkdownRenderer {
     }()
 
     static func render(_ markdown: String) -> String {
-        let escaped = markdown
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "`", with: "\\`")
-            .replacingOccurrences(of: "$", with: "\\$")
+        // setObject로 문자열을 직접 전달 — template literal escaping 불필요
+        context.setObject(markdown, forKeyedSubscript: "_input" as NSString)
 
-        // marked.js parse
-        guard let markedResult = context.evaluateScript("marked.parse(`\(escaped)`)"),
-              var html = markedResult.toString() else {
+        guard let result = context.evaluateScript("renderMarkdown(_input)"),
+              !result.isUndefined,
+              let html = result.toString() else {
             return "<p>Failed to render markdown</p>"
-        }
-
-        // KaTeX post-process
-        let katexEscaped = html
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "`", with: "\\`")
-        if let katexResult = context.evaluateScript("renderKaTeX(`\(katexEscaped)`)"),
-           let katexHTML = katexResult.toString() {
-            html = katexHTML
         }
 
         return html
