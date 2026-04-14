@@ -5,12 +5,9 @@ struct GeulApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
     var body: some Scene {
-        WindowGroup {
-            ContentView(fileURL: nil)
-                .navigationTitle("geul")
-                .frame(minWidth: 500, minHeight: 300)
+        Settings {
+            EmptyView()
         }
-        .defaultSize(width: 900, height: 700)
     }
 }
 
@@ -23,6 +20,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.activate(ignoringOtherApps: true)
+
+        // Apple Events(open:)가 didFinishLaunching 전에 호출됨
+        // 파일 없이 실행된 경우 usage 창 표시
+        DispatchQueue.main.async { [self] in
+            if windows.isEmpty {
+                openWindow(for: nil)
+            }
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -31,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func openWindow(for fileURL: URL) {
+    private func openWindow(for fileURL: URL?) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -42,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: ContentView(fileURL: fileURL)
                 .frame(minWidth: 500, minHeight: 300)
         )
-        window.title = fileURL.lastPathComponent
+        window.title = fileURL?.lastPathComponent ?? "geul"
         window.center()
         window.makeKeyAndOrderFront(nil)
         windows.append(window)
