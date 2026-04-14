@@ -2,7 +2,8 @@ import Foundation
 
 enum HTMLTemplate {
     static func compose(body: String, title: String) -> String {
-        let highlightCSS = loadResource("github.min", ext: "css")
+        let highlightLightCSS = loadResource("github.min", ext: "css")
+        let highlightDarkCSS = loadResource("github-dark.min", ext: "css")
         let katexCSS = loadResource("katex.min", ext: "css")
         let mermaidJS = loadResource("mermaid.min", ext: "js")
 
@@ -14,7 +15,15 @@ enum HTMLTemplate {
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>\(title)</title>
             <style>\(baseCSS)</style>
-            <style>\(highlightCSS ?? "")</style>
+            <style>
+            @media (prefers-color-scheme: light) {
+                \(highlightLightCSS ?? "")
+            }
+            @media (prefers-color-scheme: dark) {
+                \(highlightDarkCSS ?? "")
+            }
+            </style>
+            <style>\(highlightOverrideCSS)</style>
             <style>\(katexCSS ?? "")</style>
             <style>\(loadingCSS)</style>
         </head>
@@ -360,6 +369,19 @@ private extension HTMLTemplate {
     """
 }
 
+// MARK: - Highlight.js Override
+
+private extension HTMLTemplate {
+
+    static let highlightOverrideCSS = """
+    pre code.hljs {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+    }
+    """
+}
+
 // MARK: - Mermaid Init Script
 
 private extension HTMLTemplate {
@@ -369,9 +391,10 @@ private extension HTMLTemplate {
         const containers = document.querySelectorAll('.mermaid-container');
         if (containers.length === 0) return;
 
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         mermaid.initialize({
             startOnLoad: false,
-            theme: 'default',
+            theme: isDark ? 'dark' : 'default',
             securityLevel: 'loose'
         });
 
