@@ -67,6 +67,17 @@ Use the XcodeBuildMCP MCP server for build and test verification.
 - PM documents (PRD, discovery plan, feature spec, etc.) are stored in `docs/pm/`
 - The `docs/` directory is gitignored and managed locally only
 
+## Progress Tracking
+
+Track phase-level progress in `docs/pm/PROGRESS.md`.
+
+- **Phase start:** Update status to "in progress" and record the plan file path
+- **Plan complete:** Add the finalized task list to the phase's `### Tasks` section as `- [ ]` checkboxes
+- **Task complete:** Check off the corresponding checkbox (`- [x]`)
+- **Phase complete:** Update status to "done", record completion date, commits, and known issues
+- **Known issue found:** Record under the relevant phase or the carry-over target phase
+
 ## Conventions
 
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `chore:`, `refactor:`)
+- **CLAUDE.md must always be written in English.** Other docs (PRD, plans, PROGRESS.md) may use Korean.
