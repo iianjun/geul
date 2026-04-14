@@ -11,8 +11,12 @@ struct GeulApp: App {
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var windows: [NSWindow] = []
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        true
+    }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
@@ -28,6 +32,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 openWindow(for: nil)
             }
         }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        windows.removeAll { $0 === window }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -48,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .frame(minWidth: 500, minHeight: 300)
         )
         window.title = fileURL?.lastPathComponent ?? "geul"
+        window.delegate = self
         window.center()
         window.makeKeyAndOrderFront(nil)
         windows.append(window)
