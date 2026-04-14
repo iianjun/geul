@@ -55,17 +55,18 @@ enum MarkdownRenderer {
                            '<pre class="mermaid" style="display:none;">' +
                            escaped + '</pre></div>';
                 }
-                return false;
+                var highlighted;
+                if (lang && hljs.getLanguage(lang)) {
+                    highlighted = hljs.highlight(text, { language: lang }).value;
+                } else {
+                    highlighted = hljs.highlightAuto(text).value;
+                }
+                var cls = lang ? 'hljs language-' + lang : 'hljs';
+                return '<pre><code class="' + cls + '">' + highlighted + '</code></pre>';
             };
 
             marked.use({
                 renderer: renderer,
-                highlight: function(code, lang) {
-                    if (lang && hljs.getLanguage(lang)) {
-                        return hljs.highlight(code, { language: lang }).value;
-                    }
-                    return hljs.highlightAuto(code).value;
-                },
                 gfm: true,
                 breaks: false
             });
