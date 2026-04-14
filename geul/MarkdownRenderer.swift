@@ -60,12 +60,32 @@ enum MarkdownRenderer {
 
             marked.use({
                 renderer: renderer,
+                highlight: function(code, lang) {
+                    if (lang && hljs.getLanguage(lang)) {
+                        return hljs.highlight(code, { language: lang }).value;
+                    }
+                    return hljs.highlightAuto(code).value;
+                },
                 gfm: true,
                 breaks: false
             });
 
             globalThis.renderMarkdown = function(input) {
                 return marked.parse(input);
+            };
+
+            globalThis.renderKaTeX = function(text) {
+                text = text.replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, function(match, math) {
+                    try {
+                        return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
+                    } catch(e) { return match; }
+                });
+                text = text.replace(/(?<!\\$)\\$(?!\\$)(.+?)(?<!\\$)\\$(?!\\$)/g, function(match, math) {
+                    try {
+                        return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                    } catch(e) { return match; }
+                });
+                return text;
             };
         })();
         """)
@@ -74,13 +94,19 @@ enum MarkdownRenderer {
     }()
 
     static func render(_ markdown: String) -> String {
-        // setObject로 문자열을 직접 전달 — template literal escaping 불필요
         context.setObject(markdown, forKeyedSubscript: "_input" as NSString)
 
         guard let result = context.evaluateScript("renderMarkdown(_input)"),
               !result.isUndefined,
-              let html = result.toString() else {
+              var html = result.toString() else {
             return "<p>Failed to render markdown</p>"
+        }
+
+        // KaTeX post-process
+        context.setObject(html, forKeyedSubscript: "_html" as NSString)
+        if let katexResult = context.evaluateScript("renderKaTeX(_html)"),
+           let katexHTML = katexResult.toString() {
+            html = katexHTML
         }
 
         return html
