@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-geul is a macOS-only app for viewing markdown files. Run `geul README.md` from the CLI to open the app and render the given markdown file.
+geul is a macOS-only app for viewing markdown files. Run `geul file.md` from the CLI to open the app and render the given markdown file. Each file opens in a new window.
 
 ## Build
 
@@ -19,8 +19,21 @@ swift build
 ## Architecture
 
 - **macOS 14+**, SwiftUI-based, trunk-based development
-- Xcode project (`geul.xcodeproj`) is the primary build system; `Package.swift` is maintained for SPM compatibility
+- Xcode project (`geul.xcodeproj`) is the primary build system; `Package.swift` is maintained for SPM build verification only
 - Source directory: `geul/`
+
+### CLI Flow
+
+```
+geul file.md → /usr/local/bin/geul (shell wrapper)
+  → open -a "geul" file.md
+  → macOS LaunchServices → Apple Events
+  → AppDelegate.application(_:open:) → new NSWindow per file
+```
+
+- **Shell wrapper** (`geul/Resources/geul`): `open -a` 호출. 심링크가 아님 — `Bundle.main`이 항상 `.app` 번들을 가리키도록 보장
+- **Document Types** (`geul/Info.plist`): `.md` UTI 등록 → Apple Events로 파일 수신
+- **Multi-window**: 파일마다 독립 NSWindow. `WindowGroup` 미사용 — AppDelegate가 직접 관리
 
 ## Verification
 
@@ -33,7 +46,14 @@ make lint        # strict lint check
 make lint-fix    # auto-fix correctable violations
 ```
 
-### 2. Build & Test (XcodeBuildMCP)
+### 2. Process Management
+
+```bash
+make kill        # kill all running geul processes
+make install     # Xcode build + install CLI wrapper to /usr/local/bin/geul
+```
+
+### 3. Build & Test (XcodeBuildMCP)
 
 Use the XcodeBuildMCP MCP server for build and test verification.
 
