@@ -40,5 +40,8 @@ supabase/.temp/
 # Secrets
 Secrets.xcconfig
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # Docs (specs & plans)
 docs/
