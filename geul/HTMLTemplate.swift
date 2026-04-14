@@ -391,9 +391,10 @@ private extension HTMLTemplate {
         const containers = document.querySelectorAll('.mermaid-container');
         if (containers.length === 0) return;
 
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         mermaid.initialize({
             startOnLoad: false,
-            theme: 'default',
+            theme: isDark ? 'dark' : 'default',
             securityLevel: 'loose'
         });
 
