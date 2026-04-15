@@ -13,6 +13,7 @@
 		B7F3A1D2E4C6089B00000024 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000014 /* MarkdownRenderer.swift */; };
 		B7F3A1D2E4C6089B00000025 /* HTMLTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000015 /* HTMLTemplate.swift */; };
 		B7F3A1D2E4C6089B00000026 /* MarkdownWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */; };
+		B7F3A1D2E4C6089B00000027 /* FileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000018 /* FileWatcher.swift */; };
 		B7F3A1D2E4C6089B00000028 /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000017 /* Resources */; };
 /* End PBXBuildFile section */
 
@@ -25,6 +26,7 @@
 		B7F3A1D2E4C6089B00000015 /* HTMLTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLTemplate.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownWebView.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000017 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000018 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +56,7 @@
 				B7F3A1D2E4C6089B00000014 /* MarkdownRenderer.swift */,
 				B7F3A1D2E4C6089B00000015 /* HTMLTemplate.swift */,
 				B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */,
+				B7F3A1D2E4C6089B00000018 /* FileWatcher.swift */,
 				B7F3A1D2E4C6089B00000017 /* Resources */,
 				B7F3A1D2E4C6089B00000012 /* Assets.xcassets */,
 			);
@@ -143,6 +146,7 @@
 				B7F3A1D2E4C6089B00000024 /* MarkdownRenderer.swift in Sources */,
 				B7F3A1D2E4C6089B00000025 /* HTMLTemplate.swift in Sources */,
 				B7F3A1D2E4C6089B00000026 /* MarkdownWebView.swift in Sources */,
+				B7F3A1D2E4C6089B00000027 /* FileWatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
