@@ -397,14 +397,22 @@ private extension HTMLTemplate {
         });
     }
 
-    function renderMermaidDiagrams(root) {
+    async function renderMermaidDiagrams(root) {
         var containers = root.querySelectorAll('.mermaid-container');
         if (containers.length === 0) return;
 
+        var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: isDark ? 'dark' : 'default',
+            securityLevel: 'loose'
+        });
+
         var prefix = 'mermaid-' + Date.now() + '-';
-        containers.forEach(async function(container, i) {
+        for (var i = 0; i < containers.length; i++) {
+            var container = containers[i];
             var pre = container.querySelector('.mermaid');
-            if (!pre) return;
+            if (!pre) continue;
 
             try {
                 var result = await mermaid.render(prefix + i, pre.textContent);
@@ -417,13 +425,13 @@ private extension HTMLTemplate {
                 var loading = container.querySelector('.geul-loading');
                 if (loading) loading.style.display = 'none';
             }
-        });
+        }
     }
 
     function updateContent(html) {
         var container = document.getElementById('content');
+        if (!container) return;
         container.innerHTML = html;
-        initMermaid();
         renderMermaidDiagrams(container);
     }
 
