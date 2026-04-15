@@ -23,13 +23,15 @@ final class FileWatcher {
     }
 
     func stop() {
-        source?.cancel()
-        source = nil
-        pollingTimer?.cancel()
-        pollingTimer = nil
-        debounceWork?.cancel()
-        debounceWork = nil
-        closeDescriptor()
+        queue.sync {
+            source?.cancel()
+            source = nil
+            pollingTimer?.cancel()
+            pollingTimer = nil
+            debounceWork?.cancel()
+            debounceWork = nil
+            closeDescriptor()
+        }
     }
 
     deinit {
@@ -83,7 +85,9 @@ final class FileWatcher {
         source?.cancel()
         source = nil
 
-        DispatchQueue.main.async { self.onDelete(true) }
+        DispatchQueue.main.async { [weak self] in
+            self?.onDelete(true)
+        }
 
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now() + 1, repeating: 1)
