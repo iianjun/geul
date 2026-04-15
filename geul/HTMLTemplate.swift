@@ -118,6 +118,7 @@ private extension HTMLTemplate {
         line-height: 1.7;
         color: var(--text-primary);
         background-color: var(--bg-primary);
+        padding-top: 36px;
     }
 
     .markdown-body {
