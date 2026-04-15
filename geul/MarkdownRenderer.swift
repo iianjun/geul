@@ -2,6 +2,8 @@ import Foundation
 import JavaScriptCore
 
 enum MarkdownRenderer {
+    private static let queue = DispatchQueue(label: "com.geul.renderer")
+
     private static let resourceBundle: Bundle = {
         #if SWIFT_PACKAGE
         return Bundle.module
@@ -95,21 +97,23 @@ enum MarkdownRenderer {
     }()
 
     static func render(_ markdown: String) -> String {
-        context.setObject(markdown, forKeyedSubscript: "_input" as NSString)
+        queue.sync {
+            context.setObject(markdown, forKeyedSubscript: "_input" as NSString)
 
-        guard let result = context.evaluateScript("renderMarkdown(_input)"),
-              !result.isUndefined,
-              var html = result.toString() else {
-            return "<p>Failed to render markdown</p>"
+            guard let result = context.evaluateScript("renderMarkdown(_input)"),
+                  !result.isUndefined,
+                  var html = result.toString() else {
+                return "<p>Failed to render markdown</p>"
+            }
+
+            // KaTeX post-process
+            context.setObject(html, forKeyedSubscript: "_html" as NSString)
+            if let katexResult = context.evaluateScript("renderKaTeX(_html)"),
+               let katexHTML = katexResult.toString() {
+                html = katexHTML
+            }
+
+            return html
         }
-
-        // KaTeX post-process
-        context.setObject(html, forKeyedSubscript: "_html" as NSString)
-        if let katexResult = context.evaluateScript("renderKaTeX(_html)"),
-           let katexHTML = katexResult.toString() {
-            html = katexHTML
-        }
-
-        return html
     }
 }
