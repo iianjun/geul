@@ -79,14 +79,18 @@ struct MarkdownWebView: NSViewRepresentable {
         }
 
         private func handleFileChange() {
-            guard let url = fileURL,
-                  let markdown = try? String(contentsOf: url, encoding: .utf8) else { return }
+            guard let url = fileURL else { return }
 
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let markdown = try? String(contentsOf: url, encoding: .utf8) else { return }
                 let body = MarkdownRenderer.render(markdown)
                 guard let encoded = Self.jsStringEncode(body) else { return }
                 DispatchQueue.main.async {
-                    self?.webView?.evaluateJavaScript("updateContent(\(encoded))")
+                    self?.webView?.evaluateJavaScript("updateContent(\(encoded))") { _, error in
+                        if let error {
+                            print("[geul] updateContent error: \(error)")
+                        }
+                    }
                 }
             }
         }
