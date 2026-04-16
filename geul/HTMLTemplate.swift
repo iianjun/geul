@@ -28,7 +28,7 @@ enum HTMLTemplate {
             <style>\(loadingCSS)</style>
         </head>
         <body>
-            <article class="markdown-body">
+            <article id="content" class="markdown-body">
             \(body)
             </article>
             <script>\(mermaidJS ?? "")</script>
@@ -387,37 +387,56 @@ private extension HTMLTemplate {
 private extension HTMLTemplate {
 
     static let mermaidInitScript = """
-    document.addEventListener('DOMContentLoaded', function() {
-        const containers = document.querySelectorAll('.mermaid-container');
+    function initMermaid() {
+        var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: isDark ? 'dark' : 'default',
+            securityLevel: 'loose'
+        });
+    }
+
+    async function renderMermaidDiagrams(root) {
+        var containers = root.querySelectorAll('.mermaid-container');
         if (containers.length === 0) return;
 
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         mermaid.initialize({
             startOnLoad: false,
             theme: isDark ? 'dark' : 'default',
             securityLevel: 'loose'
         });
 
-        containers.forEach(async function(container, i) {
-            const pre = container.querySelector('.mermaid');
-            if (!pre) return;
+        var prefix = 'mermaid-' + Date.now() + '-';
+        for (var i = 0; i < containers.length; i++) {
+            var container = containers[i];
+            var pre = container.querySelector('.mermaid');
+            if (!pre) continue;
 
             try {
-                const { svg } = await mermaid.render(
-                    'mermaid-' + i, pre.textContent
-                );
-                pre.innerHTML = svg;
+                var result = await mermaid.render(prefix + i, pre.textContent);
+                pre.innerHTML = result.svg;
                 container.classList.add('rendered');
             } catch(e) {
-                pre.textContent =
-                    'Mermaid rendering error: ' + e.message;
+                pre.textContent = 'Mermaid rendering error: ' + e.message;
                 pre.style.display = 'block';
                 pre.style.color = 'var(--text-secondary)';
-                var loading =
-                    container.querySelector('.geul-loading');
+                var loading = container.querySelector('.geul-loading');
                 if (loading) loading.style.display = 'none';
             }
-        });
+        }
+    }
+
+    function updateContent(html) {
+        var container = document.getElementById('content');
+        if (!container) return;
+        container.innerHTML = html;
+        renderMermaidDiagrams(container);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initMermaid();
+        renderMermaidDiagrams(document.getElementById('content'));
     });
     """
 }

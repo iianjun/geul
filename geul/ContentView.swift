@@ -12,7 +12,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             if let html {
-                MarkdownWebView(html: html)
+                MarkdownWebView(html: html, fileURL: fileURL)
                     .transition(.opacity)
             }
 
