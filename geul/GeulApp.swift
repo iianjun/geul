@@ -48,7 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func openWindow(for fileURL: URL?) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
-            styleMask: [.titled, .closable, .resizable, .miniaturizable, .fullSizeContentView],
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
@@ -57,8 +57,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 .frame(minWidth: 500, minHeight: 300)
         )
         window.title = fileURL?.lastPathComponent ?? "geul"
-        window.titlebarAppearsTransparent = true
-        window.isMovableByWindowBackground = true
         window.delegate = self
         window.center()
         window.makeKeyAndOrderFront(nil)
