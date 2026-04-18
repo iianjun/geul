@@ -122,8 +122,10 @@ struct MarkdownWebView: NSViewRepresentable {
         private func applyTheme(light: Theme, dark: Theme) {
             guard let webView else { return }
             do {
-                let lightData = try JSONEncoder().encode(light.colors)
-                let darkData = try JSONEncoder().encode(dark.colors)
+                let sanitizedLight = ThemeSanitizer.sanitized(light.colors)
+                let sanitizedDark = ThemeSanitizer.sanitized(dark.colors)
+                let lightData = try JSONEncoder().encode(sanitizedLight)
+                let darkData = try JSONEncoder().encode(sanitizedDark)
                 guard let lightJSON = String(data: lightData, encoding: .utf8),
                       let darkJSON = String(data: darkData, encoding: .utf8) else { return }
                 let script = "setTheme(\(lightJSON), \(darkJSON), '\(light.type.rawValue)', '\(dark.type.rawValue)')"

@@ -49,11 +49,11 @@ enum HTMLTemplate {
     }
 
     static func themeCSS(light: Theme, dark: Theme) -> String {
-        let lightVars = light.colors
+        let lightVars = ThemeSanitizer.sanitized(light.colors)
             .sorted { $0.key < $1.key }
             .map { "    \($0.key): \($0.value);" }
             .joined(separator: "\n")
-        let darkVars = dark.colors
+        let darkVars = ThemeSanitizer.sanitized(dark.colors)
             .sorted { $0.key < $1.key }
             .map { "        \($0.key): \($0.value);" }
             .joined(separator: "\n")
