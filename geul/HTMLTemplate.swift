@@ -12,6 +12,8 @@ enum HTMLTemplate {
         let hljsDarkJSON = ThemeSanitizer.jsStringLiteral(highlightDarkCSS)
         let mermaidKey = ThemeSanitizer.mermaidKey(for: theme)
         let initialHljs = mermaidKey == "dark" ? highlightDarkCSS : highlightLightCSS
+        let sanitizedColors = ThemeSanitizer.sanitized(theme.colors)
+        let colorsJSON = Self.encodeColorsJSON(sanitizedColors)
 
         return """
         <!DOCTYPE html>
@@ -32,6 +34,7 @@ enum HTMLTemplate {
             \(body)
             </article>
             <script>
+            window.__geulCurrentColors = \(colorsJSON);
             window.__geulMermaidTheme = '\(mermaidKey)';
             window.__geulHljsCSS = { default: \(hljsLightJSON), dark: \(hljsDarkJSON) };
             </script>
@@ -54,6 +57,11 @@ enum HTMLTemplate {
         \(vars)
         }
         """
+    }
+
+    private static func encodeColorsJSON(_ colors: [String: String]) -> String {
+        let data = (try? JSONEncoder().encode(colors)) ?? Data("{}".utf8)
+        return String(data: data, encoding: .utf8) ?? "{}"
     }
 
     private static let resourceBundle: Bundle = {
