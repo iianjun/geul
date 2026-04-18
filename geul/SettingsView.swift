@@ -33,13 +33,8 @@ struct SettingsView: View {
 
             Section {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("~/.config/geul/themes/")
-                            .font(.system(.body, design: .monospaced))
-                        Text("직접 .json 파일을 관리하고 싶을 때")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("~/.config/geul/themes/")
+                        .font(.system(.body, design: .monospaced))
                     Spacer()
                     Button("Reveal in Finder") {
                         store.revealThemesFolder()
