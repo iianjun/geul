@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import WebKit
 
@@ -37,6 +38,7 @@ struct MarkdownWebView: NSViewRepresentable {
         var fileURL: URL?
         var fileWatcher: FileWatcher?
         weak var webView: WKWebView?
+        private var themeCancellables = Set<AnyCancellable>()
 
         // swiftlint:disable:next implicitly_unwrapped_optional
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -48,6 +50,7 @@ struct MarkdownWebView: NSViewRepresentable {
             if self.webView == nil {
                 self.webView = webView
                 startWatching()
+                observeThemeChanges()
             }
         }
 
@@ -99,6 +102,39 @@ struct MarkdownWebView: NSViewRepresentable {
             guard let fileName = fileURL?.lastPathComponent else { return }
             let title = deleted ? "\(fileName) (deleted)" : fileName
             webView?.window?.title = title
+        }
+
+        // MARK: - Theme Observation
+
+        private func observeThemeChanges() {
+            let store = ThemeStore.shared
+            store.$resolvedLight
+                .combineLatest(store.$resolvedDark)
+                .dropFirst()
+                .debounce(for: .milliseconds(16), scheduler: DispatchQueue.main)
+                .removeDuplicates(by: ==)
+                .sink { [weak self] light, dark in
+                    self?.applyTheme(light: light, dark: dark)
+                }
+                .store(in: &themeCancellables)
+        }
+
+        private func applyTheme(light: Theme, dark: Theme) {
+            guard let webView else { return }
+            do {
+                let lightData = try JSONEncoder().encode(light.colors)
+                let darkData = try JSONEncoder().encode(dark.colors)
+                guard let lightJSON = String(data: lightData, encoding: .utf8),
+                      let darkJSON = String(data: darkData, encoding: .utf8) else { return }
+                let script = "setTheme(\(lightJSON), \(darkJSON), '\(light.type.rawValue)', '\(dark.type.rawValue)')"
+                webView.evaluateJavaScript(script) { _, error in
+                    if let error {
+                        print("[geul] setTheme error: \(error)")
+                    }
+                }
+            } catch {
+                print("[geul] Failed to encode theme colors: \(error)")
+            }
         }
 
         private static func jsStringEncode(_ string: String) -> String? {
