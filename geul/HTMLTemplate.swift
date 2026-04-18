@@ -422,11 +422,25 @@ private extension HTMLTemplate {
         }
     }
 
+    function renderMath(root) {
+        if (!root || typeof renderMathInElement !== 'function') return;
+        renderMathInElement(root, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$',  right: '$',  display: false }
+            ],
+            throwOnError: false,
+            errorColor: 'var(--accent)',
+            ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+        });
+    }
+
     function updateContent(html) {
         var container = document.getElementById('content');
         if (!container) return;
         container.innerHTML = html;
         renderMermaidDiagrams(container);
+        renderMath(container);
     }
 
     function setTheme(colors, mermaidKey) {
@@ -461,6 +475,7 @@ private extension HTMLTemplate {
     document.addEventListener('DOMContentLoaded', function() {
         initMermaid();
         renderMermaidDiagrams(document.getElementById('content'));
+        renderMath(document.getElementById('content'));
     });
     """
 }
