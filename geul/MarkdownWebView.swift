@@ -4,8 +4,7 @@ import WebKit
 struct MarkdownWebView: NSViewRepresentable {
     let html: String
     let fileURL: URL?
-    let lightTheme: Theme
-    let darkTheme: Theme
+    let theme: Theme
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -21,8 +20,7 @@ struct MarkdownWebView: NSViewRepresentable {
 
         context.coordinator.lastHTML = html
         context.coordinator.fileURL = fileURL
-        context.coordinator.lastAppliedLight = lightTheme
-        context.coordinator.lastAppliedDark = darkTheme
+        context.coordinator.lastAppliedTheme = theme
         webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
         return webView
     }
@@ -30,20 +28,17 @@ struct MarkdownWebView: NSViewRepresentable {
     func updateNSView(_ webView: WKWebView, context: Context) {
         if html != context.coordinator.lastHTML {
             // Content changed: full reload. The new HTML embeds the current
-            // themes, so update the applied baseline in lockstep.
+            // theme, so update the applied baseline in lockstep.
             context.coordinator.lastHTML = html
-            context.coordinator.lastAppliedLight = lightTheme
-            context.coordinator.lastAppliedDark = darkTheme
+            context.coordinator.lastAppliedTheme = theme
             webView.alphaValue = 0
             webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
             return
         }
 
-        if context.coordinator.lastAppliedLight != lightTheme
-            || context.coordinator.lastAppliedDark != darkTheme {
-            context.coordinator.lastAppliedLight = lightTheme
-            context.coordinator.lastAppliedDark = darkTheme
-            context.coordinator.applyTheme(light: lightTheme, dark: darkTheme)
+        if context.coordinator.lastAppliedTheme != theme {
+            context.coordinator.lastAppliedTheme = theme
+            context.coordinator.applyTheme(theme)
         }
     }
 
@@ -54,11 +49,10 @@ struct MarkdownWebView: NSViewRepresentable {
         var fileURL: URL?
         var fileWatcher: FileWatcher?
         weak var webView: WKWebView?
-        var lastAppliedLight: Theme?
-        var lastAppliedDark: Theme?
+        var lastAppliedTheme: Theme?
         // A theme change that arrived before the first navigation finished.
         // Drained in didFinish so the fresh WebView picks it up.
-        private var pendingThemeApply: (Theme, Theme)?
+        private var pendingThemeApply: Theme?
 
         // swiftlint:disable:next implicitly_unwrapped_optional
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -72,9 +66,9 @@ struct MarkdownWebView: NSViewRepresentable {
                 startWatching()
             }
 
-            if let (light, dark) = pendingThemeApply {
+            if let pending = pendingThemeApply {
                 pendingThemeApply = nil
-                applyTheme(light: light, dark: dark)
+                applyTheme(pending)
             }
         }
 
@@ -130,21 +124,19 @@ struct MarkdownWebView: NSViewRepresentable {
 
         // MARK: - Theme Patching
 
-        func applyTheme(light: Theme, dark: Theme) {
+        func applyTheme(_ theme: Theme) {
             // Queue until the first navigation completes; otherwise the
             // <style id="geul-theme"> element doesn't exist yet.
             guard let webView, webView.isLoading == false else {
-                pendingThemeApply = (light, dark)
+                pendingThemeApply = theme
                 return
             }
             do {
-                let sanitizedLight = ThemeSanitizer.sanitized(light.colors)
-                let sanitizedDark = ThemeSanitizer.sanitized(dark.colors)
-                let lightData = try JSONEncoder().encode(sanitizedLight)
-                let darkData = try JSONEncoder().encode(sanitizedDark)
-                guard let lightJSON = String(data: lightData, encoding: .utf8),
-                      let darkJSON = String(data: darkData, encoding: .utf8) else { return }
-                let script = "setTheme(\(lightJSON), \(darkJSON), '\(light.type.rawValue)', '\(dark.type.rawValue)')"
+                let sanitized = ThemeSanitizer.sanitized(theme.colors)
+                let data = try JSONEncoder().encode(sanitized)
+                guard let colorsJSON = String(data: data, encoding: .utf8) else { return }
+                let mermaidKey = ThemeSanitizer.mermaidKey(for: theme)
+                let script = "setTheme(\(colorsJSON), '\(mermaidKey)')"
                 webView.evaluateJavaScript(script) { _, error in
                     if let error {
                         print("[geul] setTheme error: \(error)")

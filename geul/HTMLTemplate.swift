@@ -1,16 +1,15 @@
 import Foundation
 
 enum HTMLTemplate {
-    static func compose(
-        body: String,
-        title: String,
-        lightTheme: Theme,
-        darkTheme: Theme
-    ) -> String {
-        let highlightLightCSS = loadResource("github.min", ext: "css")
-        let highlightDarkCSS = loadResource("github-dark.min", ext: "css")
+    static func compose(body: String, title: String, theme: Theme) -> String {
+        let highlightLightCSS = loadResource("github.min", ext: "css") ?? ""
+        let highlightDarkCSS = loadResource("github-dark.min", ext: "css") ?? ""
         let katexCSS = loadResource("katex.min", ext: "css")
         let mermaidJS = loadResource("mermaid.min", ext: "js")
+        let hljsLightJSON = ThemeSanitizer.jsStringLiteral(highlightLightCSS)
+        let hljsDarkJSON = ThemeSanitizer.jsStringLiteral(highlightDarkCSS)
+        let mermaidKey = ThemeSanitizer.mermaidKey(for: theme)
+        let initialHljs = mermaidKey == "dark" ? highlightDarkCSS : highlightLightCSS
 
         return """
         <!DOCTYPE html>
@@ -19,16 +18,9 @@ enum HTMLTemplate {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>\(title)</title>
-            <style id="geul-theme">\(themeCSS(light: lightTheme, dark: darkTheme))</style>
+            <style id="geul-theme">\(themeCSS(theme))</style>
             <style>\(baseCSS)</style>
-            <style>
-            @media (prefers-color-scheme: light) {
-                \(highlightLightCSS ?? "")
-            }
-            @media (prefers-color-scheme: dark) {
-                \(highlightDarkCSS ?? "")
-            }
-            </style>
+            <style id="geul-hljs">\(initialHljs)</style>
             <style>\(highlightOverrideCSS)</style>
             <style>\(katexCSS ?? "")</style>
             <style>\(loadingCSS)</style>
@@ -38,8 +30,8 @@ enum HTMLTemplate {
             \(body)
             </article>
             <script>
-            window.__geulLightType = '\(lightTheme.type.rawValue)';
-            window.__geulDarkType = '\(darkTheme.type.rawValue)';
+            window.__geulMermaidTheme = '\(mermaidKey)';
+            window.__geulHljsCSS = { default: \(hljsLightJSON), dark: \(hljsDarkJSON) };
             </script>
             <script>\(mermaidJS ?? "")</script>
             <script>\(mermaidInitScript)</script>
@@ -48,23 +40,14 @@ enum HTMLTemplate {
         """
     }
 
-    static func themeCSS(light: Theme, dark: Theme) -> String {
-        let lightVars = ThemeSanitizer.sanitized(light.colors)
+    static func themeCSS(_ theme: Theme) -> String {
+        let vars = ThemeSanitizer.sanitized(theme.colors)
             .sorted { $0.key < $1.key }
             .map { "    \($0.key): \($0.value);" }
             .joined(separator: "\n")
-        let darkVars = ThemeSanitizer.sanitized(dark.colors)
-            .sorted { $0.key < $1.key }
-            .map { "        \($0.key): \($0.value);" }
-            .joined(separator: "\n")
         return """
         :root {
-        \(lightVars)
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-        \(darkVars)
-            }
+        \(vars)
         }
         """
     }
@@ -390,9 +373,7 @@ private extension HTMLTemplate {
 
     static let mermaidInitScript = """
     function currentMermaidTheme() {
-        var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var type = isDark ? window.__geulDarkType : window.__geulLightType;
-        return type === 'dark' ? 'dark' : 'default';
+        return window.__geulMermaidTheme === 'dark' ? 'dark' : 'default';
     }
 
     function initMermaid() {
@@ -444,20 +425,19 @@ private extension HTMLTemplate {
         renderMermaidDiagrams(container);
     }
 
-    function setTheme(lightColors, darkColors, lightType, darkType) {
-        var lightLines = Object.keys(lightColors).sort().map(function(k) {
-            return '    ' + k + ': ' + lightColors[k] + ';';
+    function setTheme(colors, mermaidKey) {
+        var lines = Object.keys(colors).sort().map(function(k) {
+            return '    ' + k + ': ' + colors[k] + ';';
         }).join('\\n');
-        var darkLines = Object.keys(darkColors).sort().map(function(k) {
-            return '        ' + k + ': ' + darkColors[k] + ';';
-        }).join('\\n');
-        var css = ':root {\\n' + lightLines + '\\n}\\n' +
-                  '@media (prefers-color-scheme: dark) {\\n    :root {\\n' +
-                  darkLines + '\\n    }\\n}';
+        var css = ':root {\\n' + lines + '\\n}';
         var styleEl = document.getElementById('geul-theme');
         if (styleEl) styleEl.textContent = css;
-        window.__geulLightType = lightType;
-        window.__geulDarkType = darkType;
+
+        window.__geulMermaidTheme = mermaidKey;
+        var hljs = document.getElementById('geul-hljs');
+        if (hljs && window.__geulHljsCSS) {
+            hljs.textContent = window.__geulHljsCSS[mermaidKey] || window.__geulHljsCSS.default;
+        }
 
         var content = document.getElementById('content');
         if (content) {

@@ -1,6 +1,5 @@
 {
-  "name": "Default",
-  "type": "dark",
+  "name": "Default Dark",
   "colors": {
     "--bg-primary": "#1c1917",
     "--bg-secondary": "#292524",

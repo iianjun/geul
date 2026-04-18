@@ -5,17 +5,17 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @StateObject private var store = ThemeStore.shared
     @State private var errorMessage: String?
-    @State private var pendingDelete: ThemeGroup?
+    @State private var pendingDelete: LoadedTheme?
 
     var body: some View {
         Form {
             Section {
-                ForEach(store.groups) { group in
+                ForEach(store.themes) { loaded in
                     ThemeRow(
-                        group: group,
-                        isSelected: group.name == store.selectedName,
-                        onSelect: { store.select(name: group.name) },
-                        onDelete: { pendingDelete = group }
+                        theme: loaded,
+                        isSelected: loaded.name == store.selectedName,
+                        onSelect: { store.select(name: loaded.name) },
+                        onDelete: { pendingDelete = loaded }
                     )
                 }
 
@@ -58,14 +58,14 @@ struct SettingsView: View {
         }
         .alert("Remove \(pendingDelete?.name ?? "")?",
                isPresented: deleteBinding,
-               presenting: pendingDelete) { group in
+               presenting: pendingDelete) { loaded in
             Button("Remove", role: .destructive) {
-                store.removeUserTheme(name: group.name)
+                store.removeUserTheme(name: loaded.name)
                 pendingDelete = nil
             }
             Button("Cancel", role: .cancel) { pendingDelete = nil }
         } message: { _ in
-            Text("This deletes the theme files from ~/.config/geul/themes/.")
+            Text("This deletes the theme file from ~/.config/geul/themes/.")
         }
     }
 
@@ -97,7 +97,7 @@ struct SettingsView: View {
 }
 
 private struct ThemeRow: View {
-    let group: ThemeGroup
+    let theme: LoadedTheme
     let isSelected: Bool
     let onSelect: () -> Void
     let onDelete: () -> Void
@@ -108,30 +108,25 @@ private struct ThemeRow: View {
                 .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                 .font(.system(size: 16))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(group.name)
-                    .font(.body)
-                Text(group.metaLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text(theme.name)
+                .font(.body)
 
             Spacer()
 
-            Text(group.isBuiltIn ? "Built-in" : "User")
+            Text(theme.isBuiltIn ? "Built-in" : "User")
                 .font(.caption2)
                 .fontWeight(.semibold)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
                 .background(
-                    group.isBuiltIn
+                    theme.isBuiltIn
                         ? Color.secondary.opacity(0.15)
                         : Color.accentColor.opacity(0.18)
                 )
-                .foregroundStyle(group.isBuiltIn ? Color.secondary : Color.accentColor)
+                .foregroundStyle(theme.isBuiltIn ? Color.secondary : Color.accentColor)
                 .clipShape(Capsule())
 
-            if !group.isBuiltIn {
+            if !theme.isBuiltIn {
                 Button(action: onDelete) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
