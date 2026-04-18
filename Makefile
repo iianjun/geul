@@ -17,5 +17,11 @@ kill:
 
 install: build-xcode
 	@BUILT=$$(xcodebuild -project geul.xcodeproj -scheme geul -showBuildSettings 2>/dev/null | grep ' BUILT_PRODUCTS_DIR' | sed 's/.*= //'); \
-	ln -sf "$$BUILT/geul.app/Contents/Resources/Resources/geul" /usr/local/bin/geul
-	@echo "Installed: /usr/local/bin/geul"
+	APP="$$BUILT/geul.app"; \
+	ln -sf "$$APP/Contents/Resources/Resources/geul" /usr/local/bin/geul; \
+	LSREG=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister; \
+	for stale in $$HOME/Library/Developer/Xcode/DerivedData/geul-*/Build/Products/Debug/geul.app; do \
+	  if [ -d "$$stale" ] && [ "$$stale" != "$$APP" ]; then $$LSREG -u "$$stale" >/dev/null 2>&1 || true; fi; \
+	done; \
+	$$LSREG -f "$$APP"; \
+	echo "Installed: /usr/local/bin/geul (LaunchServices -> $$APP)"
