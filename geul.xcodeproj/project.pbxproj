@@ -19,6 +19,10 @@
 		B7F3A1D2E4C6089B0000002B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B0000001B /* SettingsView.swift */; };
 		B7F3A1D2E4C6089B0000002C /* ThemeSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B0000001C /* ThemeSanitizer.swift */; };
 		B7F3A1D2E4C6089B00000028 /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000017 /* Resources */; };
+		B7F3A1D2E4C6089B00000080 /* HTMLTemplate+BaseCSS.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000070 /* HTMLTemplate+BaseCSS.swift */; };
+		B7F3A1D2E4C6089B00000081 /* HTMLTemplate+Loading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000071 /* HTMLTemplate+Loading.swift */; };
+		B7F3A1D2E4C6089B00000082 /* HTMLTemplate+HighlightOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000072 /* HTMLTemplate+HighlightOverride.swift */; };
+		B7F3A1D2E4C6089B00000083 /* HTMLTemplate+MermaidInit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +39,10 @@
 		B7F3A1D2E4C6089B0000001A /* ThemeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeStore.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B0000001B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B0000001C /* ThemeSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSanitizer.swift; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000070 /* HTMLTemplate+BaseCSS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+BaseCSS.swift"; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000071 /* HTMLTemplate+Loading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+Loading.swift"; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000072 /* HTMLTemplate+HighlightOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+HighlightOverride.swift"; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+MermaidInit.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +71,10 @@
 				B7F3A1D2E4C6089B00000011 /* ContentView.swift */,
 				B7F3A1D2E4C6089B00000014 /* MarkdownRenderer.swift */,
 				B7F3A1D2E4C6089B00000015 /* HTMLTemplate.swift */,
+				B7F3A1D2E4C6089B00000070 /* HTMLTemplate+BaseCSS.swift */,
+				B7F3A1D2E4C6089B00000071 /* HTMLTemplate+Loading.swift */,
+				B7F3A1D2E4C6089B00000072 /* HTMLTemplate+HighlightOverride.swift */,
+				B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */,
 				B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */,
 				B7F3A1D2E4C6089B00000018 /* FileWatcher.swift */,
 				B7F3A1D2E4C6089B00000019 /* Theme.swift */,
@@ -157,6 +169,10 @@
 				B7F3A1D2E4C6089B00000021 /* ContentView.swift in Sources */,
 				B7F3A1D2E4C6089B00000024 /* MarkdownRenderer.swift in Sources */,
 				B7F3A1D2E4C6089B00000025 /* HTMLTemplate.swift in Sources */,
+				B7F3A1D2E4C6089B00000080 /* HTMLTemplate+BaseCSS.swift in Sources */,
+				B7F3A1D2E4C6089B00000081 /* HTMLTemplate+Loading.swift in Sources */,
+				B7F3A1D2E4C6089B00000082 /* HTMLTemplate+HighlightOverride.swift in Sources */,
+				B7F3A1D2E4C6089B00000083 /* HTMLTemplate+MermaidInit.swift in Sources */,
 				B7F3A1D2E4C6089B00000026 /* MarkdownWebView.swift in Sources */,
 				B7F3A1D2E4C6089B00000027 /* FileWatcher.swift in Sources */,
 				B7F3A1D2E4C6089B00000029 /* Theme.swift in Sources */,
