@@ -44,18 +44,22 @@ enum MarkdownRenderer {
         (function() {
             const renderer = new marked.Renderer();
 
+            function escapeHTML(text) {
+                return String(text == null ? '' : text)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+
             renderer.code = function({ text, lang }) {
                 if (lang === 'mermaid') {
-                    var escaped = text.replace(/&/g, '&amp;')
-                                      .replace(/</g, '&lt;')
-                                      .replace(/>/g, '&gt;');
                     return '<div class="mermaid-container">' +
                            '<div class="geul-loading">' +
                            '<div class="bar"></div><div class="bar"></div>' +
                            '<div class="bar"></div><div class="bar"></div>' +
                            '</div>' +
                            '<pre class="mermaid" style="display:none;">' +
-                           escaped + '</pre></div>';
+                           escapeHTML(text) + '</pre></div>';
                 }
                 var highlighted;
                 if (lang && hljs.getLanguage(lang)) {
@@ -67,10 +71,27 @@ enum MarkdownRenderer {
                 return '<pre><code class="' + cls + '">' + highlighted + '</code></pre>';
             };
 
+            // Prevent raw HTML in markdown from executing inside the WebView.
+            // Escape both block-level and inline html tokens so they render as literal text.
+            renderer.html = function(token) {
+                var raw = token && (token.raw != null ? token.raw : token.text);
+                return escapeHTML(raw);
+            };
+
             marked.use({
                 renderer: renderer,
                 gfm: true,
-                breaks: false
+                breaks: false,
+                walkTokens: function(token) {
+                    if (token && token.type === 'html') {
+                        // Convert html tokens to escaped text so the inline renderer
+                        // (which doesn't go through renderer.html) also neutralizes them.
+                        var raw = token.raw != null ? token.raw : (token.text || '');
+                        token.type = 'text';
+                        token.text = escapeHTML(raw);
+                        if (token.tokens) token.tokens = undefined;
+                    }
+                }
             });
 
             globalThis.renderMarkdown = function(input) {
