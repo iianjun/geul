@@ -46,6 +46,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(minWidth: 480, idealWidth: 520, minHeight: 360)
+        .background(WindowTitleSetter(title: "Settings"))
         .alert("Import failed", isPresented: errorBinding, presenting: errorMessage) { _ in
             Button("OK", role: .cancel) { errorMessage = nil }
         } message: { message in
@@ -87,6 +88,27 @@ struct SettingsView: View {
             try store.importTheme(from: url)
         } catch {
             errorMessage = "Couldn't import \(url.lastPathComponent): \(error.localizedDescription)"
+        }
+    }
+}
+
+/// Overrides the system-assigned "<AppName> Settings" window title.
+/// SwiftUI's Settings scene has no native title hook, so we reach through
+/// the NSView hierarchy once to rename the hosting NSWindow.
+private struct WindowTitleSetter: NSViewRepresentable {
+    let title: String
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { [weak view] in
+            view?.window?.title = title
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { [weak nsView] in
+            nsView?.window?.title = title
         }
     }
 }
