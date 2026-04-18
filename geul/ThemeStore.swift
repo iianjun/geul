@@ -1,18 +1,18 @@
 import AppKit
-import Combine
 import Foundation
 
 final class ThemeStore: ObservableObject {
     static let shared = ThemeStore()
 
-    /// All themes grouped by `name`, sorted alphabetically with Default first.
-    @Published private(set) var groups: [ThemeGroup] = []
+    static let defaultThemeName = "Default Dark"
+    private static let reservedBuiltInNames: Set<String> = ["Default Dark", "Default Light"]
+
+    /// All themes, sorted with Default Dark first, Default Light second, then others alphabetical.
+    @Published private(set) var themes: [LoadedTheme] = []
     /// The user's selection (`Theme.name`). Persisted to settings.json.
     @Published private(set) var selectedName: String
-    /// The resolved light theme for the active selection. Always non-nil.
-    @Published private(set) var resolvedLight: Theme
-    /// The resolved dark theme for the active selection. Always non-nil.
-    @Published private(set) var resolvedDark: Theme
+    /// The currently resolved theme. Always non-nil.
+    @Published private(set) var resolved: Theme
 
     private let configDir: URL
     private let themesDir: URL
@@ -23,14 +23,14 @@ final class ThemeStore: ObservableObject {
     }
 
     enum ThemeStoreError: LocalizedError {
-        case cannotImportBuiltInName
+        case cannotImportBuiltInName(String)
         case invalidThemeName(String)
         case slugCollision(incoming: String, existing: String)
 
         var errorDescription: String? {
             switch self {
-            case .cannotImportBuiltInName:
-                return "The name Default is reserved for geul's built-in theme."
+            case .cannotImportBuiltInName(let name):
+                return "The name \"\(name)\" is reserved for geul's built-in themes."
             case .invalidThemeName(let name):
                 return "\"\(name)\" is not a valid theme name — use letters, digits, or dashes."
             case .slugCollision(let incoming, let existing):
@@ -45,32 +45,25 @@ final class ThemeStore: ObservableObject {
         self.settingsURL = configDir.appendingPathComponent("settings.json")
 
         let loaded = Self.loadAllThemes(userDir: themesDir)
-        let groups = Self.makeGroups(from: loaded)
         let settings = (try? JSONDecoder().decode(
             Settings.self,
             from: Data(contentsOf: settingsURL)
         )) ?? Settings()
-        let initialName = settings.theme ?? "Default"
+        let initialName = settings.theme ?? Self.defaultThemeName
 
-        let resolvedGroup = groups.first(where: { $0.name == initialName })
-            ?? groups.first(where: { $0.name == "Default" })
-            ?? Self.defaultGroup()
+        let active = loaded.first(where: { $0.name == initialName })
+            ?? loaded.first(where: { $0.name == Self.defaultThemeName })
+            ?? Self.fallbackDefaultLoaded()
 
-        self.groups = groups
-        self.selectedName = resolvedGroup.name
-        self.resolvedLight = resolvedGroup.light?.theme
-            ?? resolvedGroup.dark?.theme
-            ?? Self.hardcodedDefault(.light)
-        self.resolvedDark = resolvedGroup.dark?.theme
-            ?? resolvedGroup.light?.theme
-            ?? Self.hardcodedDefault(.dark)
+        self.themes = loaded
+        self.selectedName = active.name
+        self.resolved = active.theme
     }
 
     // MARK: - Public API
 
     func reload() {
-        let loaded = Self.loadAllThemes(userDir: themesDir)
-        groups = Self.makeGroups(from: loaded)
+        themes = Self.loadAllThemes(userDir: themesDir)
         // Re-resolve in case the selected theme was removed externally.
         selectInternal(name: selectedName, persist: false)
     }
@@ -79,13 +72,15 @@ final class ThemeStore: ObservableObject {
         selectInternal(name: name, persist: true)
     }
 
-    /// Copy `url` into `~/.config/geul/themes/<slug>-<type>.json`, reload list.
+    /// Copy `url` into `~/.config/geul/themes/<slug>.json`, reload list.
     /// Throws a user-friendly error if decoding, slug validation, collision detection, or I/O fails.
     func importTheme(from url: URL) throws {
         let data = try Data(contentsOf: url)
         let theme = try JSONDecoder().decode(Theme.self, from: data)
-        guard theme.name.localizedCaseInsensitiveCompare("Default") != .orderedSame else {
-            throw ThemeStoreError.cannotImportBuiltInName
+        if Self.reservedBuiltInNames.contains(where: {
+            $0.localizedCaseInsensitiveCompare(theme.name) == .orderedSame
+        }) {
+            throw ThemeStoreError.cannotImportBuiltInName(theme.name)
         }
 
         let slug = Self.slugify(theme.name)
@@ -98,7 +93,7 @@ final class ThemeStore: ObservableObject {
             withIntermediateDirectories: true
         )
 
-        let dest = themesDir.appendingPathComponent("\(slug)-\(theme.type.rawValue).json")
+        let dest = themesDir.appendingPathComponent("\(slug).json")
 
         // No-op if the user picked the file that's already our destination.
         let canonicalSource = url.resolvingSymlinksInPath().standardizedFileURL
@@ -109,7 +104,6 @@ final class ThemeStore: ObservableObject {
         }
 
         // Slug collision: a different theme name already occupies this path.
-        // Refuse rather than silently overwrite someone else's work.
         if let existing = try? Data(contentsOf: dest),
            let existingTheme = try? JSONDecoder().decode(Theme.self, from: existing),
            existingTheme.name.localizedCaseInsensitiveCompare(theme.name) != .orderedSame {
@@ -119,9 +113,7 @@ final class ThemeStore: ObservableObject {
             )
         }
 
-        // Stage the payload to a temp file on the same volume, then atomically
-        // replace `dest`. We write the already-validated bytes rather than
-        // re-reading the source in case it changed between decode and copy.
+        // Stage to a temp file on the same volume, then atomically replace.
         let tmpURL = themesDir.appendingPathComponent(".import-\(UUID().uuidString).json")
         try data.write(to: tmpURL, options: .atomic)
         defer { try? FileManager.default.removeItem(at: tmpURL) }
@@ -135,15 +127,13 @@ final class ThemeStore: ObservableObject {
         reload()
     }
 
-    /// Delete both variants (if present) of the given user theme name.
-    /// No-op for built-in themes. Falls back to "Default" if the active theme was removed.
+    /// Delete the given user theme. No-op for built-in themes.
+    /// Falls back to Default Dark if the active theme was removed.
     func removeUserTheme(name: String) {
-        guard let group = groups.first(where: { $0.name == name }) else { return }
-        guard !group.isBuiltIn else { return }
-
-        for loaded in [group.light, group.dark].compactMap({ $0 }) where !loaded.isBuiltIn {
-            try? FileManager.default.removeItem(at: loaded.sourceURL)
+        guard let loaded = themes.first(where: { $0.name == name }), !loaded.isBuiltIn else {
+            return
         }
+        try? FileManager.default.removeItem(at: loaded.sourceURL)
         reload()
     }
 
@@ -159,20 +149,15 @@ final class ThemeStore: ObservableObject {
     // MARK: - Private
 
     private func selectInternal(name: String, persist: Bool) {
-        let group = groups.first(where: { $0.name == name })
-            ?? groups.first(where: { $0.name == "Default" })
-            ?? Self.defaultGroup()
+        let active = themes.first(where: { $0.name == name })
+            ?? themes.first(where: { $0.name == Self.defaultThemeName })
+            ?? Self.fallbackDefaultLoaded()
 
-        selectedName = group.name
-        resolvedLight = group.light?.theme
-            ?? group.dark?.theme
-            ?? Self.hardcodedDefault(.light)
-        resolvedDark = group.dark?.theme
-            ?? group.light?.theme
-            ?? Self.hardcodedDefault(.dark)
+        selectedName = active.name
+        resolved = active.theme
 
         if persist {
-            persistSettings(name: group.name)
+            persistSettings(name: active.name)
         }
     }
 
@@ -192,105 +177,59 @@ final class ThemeStore: ObservableObject {
     }
 
     private static func loadAllThemes(userDir: URL) -> [LoadedTheme] {
-        var results: [LoadedTheme] = []
+        var byName: [String: LoadedTheme] = [:]
+        for loaded in loadBundledThemes() {
+            byName[loaded.name] = loaded
+        }
+        for loaded in loadUserThemes(userDir: userDir) {
+            byName[loaded.name] = loaded
+        }
+        var result = Array(byName.values)
+        if !result.contains(where: { $0.name == defaultThemeName }) {
+            result.append(fallbackDefaultLoaded())
+        }
+        if !result.contains(where: { $0.name == "Default Light" }) {
+            result.append(fallbackDefaultLightLoaded())
+        }
+        return result.sorted(by: sortOrder)
+    }
 
+    private static func loadBundledThemes() -> [LoadedTheme] {
         #if SWIFT_PACKAGE
         let bundle = Bundle.module
         #else
         let bundle = Bundle.main
         #endif
-
-        if let urls = bundle.urls(
+        guard let urls = bundle.urls(
             forResourcesWithExtension: "json",
             subdirectory: "Resources/themes"
-        ) {
-            for url in urls {
-                if let theme = decode(url: url) {
-                    results.append(LoadedTheme(theme: theme, sourceURL: url, isBuiltIn: true))
-                }
-            }
+        ) else { return [] }
+        return urls.compactMap { url in
+            guard let theme = decode(url: url) else { return nil }
+            return LoadedTheme(theme: theme, sourceURL: url, isBuiltIn: true)
         }
+    }
 
-        if let contents = try? FileManager.default.contentsOfDirectory(
+    private static func loadUserThemes(userDir: URL) -> [LoadedTheme] {
+        guard let contents = try? FileManager.default.contentsOfDirectory(
             at: userDir,
             includingPropertiesForKeys: nil
-        ) {
-            for url in contents where url.pathExtension == "json" {
-                if let theme = decode(url: url) {
-                    results.append(LoadedTheme(theme: theme, sourceURL: url, isBuiltIn: false))
-                }
-            }
+        ) else { return [] }
+        return contents.compactMap { url in
+            guard url.pathExtension == "json",
+                  let theme = decode(url: url),
+                  !reservedBuiltInNames.contains(theme.name) else { return nil }
+            return LoadedTheme(theme: theme, sourceURL: url, isBuiltIn: false)
         }
-
-        return ensureDefaultThemes(in: results)
     }
 
-    private static func ensureDefaultThemes(in themes: [LoadedTheme]) -> [LoadedTheme] {
-        var result = themes
-        let hasDefaultLight = result.contains {
-            $0.name == "Default" && $0.type == .light && $0.isBuiltIn
-        }
-        let hasDefaultDark = result.contains {
-            $0.name == "Default" && $0.type == .dark && $0.isBuiltIn
-        }
-
-        if !hasDefaultLight {
-            result.append(defaultLoadedTheme(.light))
-        }
-        if !hasDefaultDark {
-            result.append(defaultLoadedTheme(.dark))
-        }
-        return result
-    }
-
-    private static func defaultLoadedTheme(_ type: Theme.ThemeType) -> LoadedTheme {
-        LoadedTheme(
-            theme: hardcodedDefault(type),
-            sourceURL: URL(fileURLWithPath: "built-in-default-\(type.rawValue).json"),
-            isBuiltIn: true
-        )
-    }
-
-    private static func defaultGroup() -> ThemeGroup {
-        ThemeGroup(
-            name: "Default",
-            light: defaultLoadedTheme(.light),
-            dark: defaultLoadedTheme(.dark)
-        )
-    }
-
-    private static func makeGroups(from themes: [LoadedTheme]) -> [ThemeGroup] {
-        // User themes with the same (name, type) override bundled ones.
-        var byKey: [String: LoadedTheme] = [:]
-        for theme in themes {
-            let key = "\(theme.name)|\(theme.type.rawValue)"
-            if let existing = byKey[key], existing.isBuiltIn && !theme.isBuiltIn {
-                byKey[key] = theme
-            } else if byKey[key] == nil {
-                byKey[key] = theme
-            }
-        }
-
-        var grouped: [String: (light: LoadedTheme?, dark: LoadedTheme?)] = [:]
-        for loaded in byKey.values {
-            var entry = grouped[loaded.name] ?? (nil, nil)
-            switch loaded.type {
-            case .light: entry.light = loaded
-            case .dark: entry.dark = loaded
-            }
-            grouped[loaded.name] = entry
-        }
-
-        let result = grouped.map { name, pair in
-            ThemeGroup(name: name, light: pair.light, dark: pair.dark)
-        }
-
-        // Default first, then alphabetical.
-        return result.sorted { lhs, rhs in
-            if lhs.name == "Default" { return true }
-            if rhs.name == "Default" { return false }
-            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-        }
+    /// Default Dark first, Default Light second, then alphabetical.
+    private static func sortOrder(_ lhs: LoadedTheme, _ rhs: LoadedTheme) -> Bool {
+        if lhs.name == defaultThemeName { return true }
+        if rhs.name == defaultThemeName { return false }
+        if lhs.name == "Default Light" { return true }
+        if rhs.name == "Default Light" { return false }
+        return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
     }
 
     private static func decode(url: URL) -> Theme? {
@@ -311,36 +250,51 @@ final class ThemeStore: ObservableObject {
             .joined()
     }
 
-    private static func hardcodedDefault(_ type: Theme.ThemeType) -> Theme {
-        // Last-resort fallback if bundled JSON is missing. Should not be needed in practice.
-        let light: [String: String] = [
-            "--bg-primary": "#fafaf9",
-            "--bg-secondary": "#f5f5f4",
-            "--bg-code": "#f5f5f4",
-            "--bg-code-border": "#0d9488",
-            "--text-primary": "#1c1917",
-            "--text-secondary": "#78716c",
-            "--text-tertiary": "#a8a29e",
-            "--accent": "#0d9488",
-            "--accent-soft": "rgba(13, 148, 136, 0.08)",
-            "--border": "#e7e5e4",
-            "--border-strong": "#d6d3d1",
-            "--shadow-subtle": "0 1px 2px rgba(28, 25, 23, 0.04)"
-        ]
-        let dark: [String: String] = [
-            "--bg-primary": "#1c1917",
-            "--bg-secondary": "#292524",
-            "--bg-code": "#292524",
-            "--bg-code-border": "#2dd4bf",
-            "--text-primary": "#fafaf9",
-            "--text-secondary": "#a8a29e",
-            "--text-tertiary": "#78716c",
-            "--accent": "#2dd4bf",
-            "--accent-soft": "rgba(45, 212, 191, 0.08)",
-            "--border": "#44403c",
-            "--border-strong": "#57534e",
-            "--shadow-subtle": "0 1px 2px rgba(0, 0, 0, 0.2)"
-        ]
-        return Theme(name: "Default", type: type, colors: type == .light ? light : dark)
+    // MARK: - Hardcoded fallbacks (used only if the bundled JSON is missing).
+
+    private static func fallbackDefaultLoaded() -> LoadedTheme {
+        LoadedTheme(
+            theme: Theme(name: defaultThemeName, colors: hardcodedDarkColors),
+            sourceURL: URL(fileURLWithPath: "built-in-default-dark.json"),
+            isBuiltIn: true
+        )
     }
+
+    private static func fallbackDefaultLightLoaded() -> LoadedTheme {
+        LoadedTheme(
+            theme: Theme(name: "Default Light", colors: hardcodedLightColors),
+            sourceURL: URL(fileURLWithPath: "built-in-default-light.json"),
+            isBuiltIn: true
+        )
+    }
+
+    private static let hardcodedDarkColors: [String: String] = [
+        "--bg-primary": "#1c1917",
+        "--bg-secondary": "#292524",
+        "--bg-code": "#292524",
+        "--bg-code-border": "#2dd4bf",
+        "--text-primary": "#fafaf9",
+        "--text-secondary": "#a8a29e",
+        "--text-tertiary": "#78716c",
+        "--accent": "#2dd4bf",
+        "--accent-soft": "rgba(45, 212, 191, 0.08)",
+        "--border": "#44403c",
+        "--border-strong": "#57534e",
+        "--shadow-subtle": "0 1px 2px rgba(0, 0, 0, 0.2)"
+    ]
+
+    private static let hardcodedLightColors: [String: String] = [
+        "--bg-primary": "#fafaf9",
+        "--bg-secondary": "#f5f5f4",
+        "--bg-code": "#f5f5f4",
+        "--bg-code-border": "#0d9488",
+        "--text-primary": "#1c1917",
+        "--text-secondary": "#78716c",
+        "--text-tertiary": "#a8a29e",
+        "--accent": "#0d9488",
+        "--accent-soft": "rgba(13, 148, 136, 0.08)",
+        "--border": "#e7e5e4",
+        "--border-strong": "#d6d3d1",
+        "--shadow-subtle": "0 1px 2px rgba(28, 25, 23, 0.04)"
+    ]
 }

@@ -16,8 +16,7 @@ struct ContentView: View {
                 MarkdownWebView(
                     html: html,
                     fileURL: fileURL,
-                    lightTheme: themeStore.resolvedLight,
-                    darkTheme: themeStore.resolvedDark
+                    theme: themeStore.resolved
                 )
                 .transition(.opacity)
             }
@@ -55,16 +54,14 @@ struct ContentView: View {
         do {
             let markdown = try String(contentsOf: fileURL, encoding: .utf8)
             let title = fileURL.lastPathComponent
-            let light = themeStore.resolvedLight
-            let dark = themeStore.resolvedDark
+            let theme = themeStore.resolved
             let rendered = await withCheckedContinuation { (continuation: CheckedContinuation<String, Never>) in
                 DispatchQueue.global(qos: .userInitiated).async {
                     let body = MarkdownRenderer.render(markdown)
                     let result = HTMLTemplate.compose(
                         body: body,
                         title: title,
-                        lightTheme: light,
-                        darkTheme: dark
+                        theme: theme
                     )
                     continuation.resume(returning: result)
                 }
