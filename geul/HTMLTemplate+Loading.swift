@@ -51,5 +51,42 @@ extension HTMLTemplate {
     .mermaid-container.rendered .mermaid {
         display: block !important;
     }
+
+    .mermaid-error {
+        border-left: 3px solid var(--accent);
+        background-color: var(--bg-secondary);
+        padding: 16px 20px;
+        border-radius: 0 var(--radius) var(--radius) 0;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .mermaid-error-header {
+        color: var(--accent);
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .mermaid-error-message {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        margin-bottom: 12px;
+        font-family: ui-monospace, "SF Mono", SFMono-Regular,
+                     Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+    }
+
+    .mermaid-error-source {
+        font-family: ui-monospace, "SF Mono", SFMono-Regular,
+                     Menlo, Consolas, monospace;
+        font-size: 0.85em;
+        color: var(--text-tertiary);
+        background: transparent;
+        border: none;
+        padding: 0;
+        box-shadow: none;
+        white-space: pre-wrap;
+        margin: 0;
+    }
     """
 }
