@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     let fileURL: URL?
+    @StateObject private var themeStore = ThemeStore.shared
     @State private var html: String?
     @State private var errorMessage: String?
     @State private var isLoading = true
@@ -49,10 +50,17 @@ struct ContentView: View {
         do {
             let markdown = try String(contentsOf: fileURL, encoding: .utf8)
             let title = fileURL.lastPathComponent
+            let light = themeStore.resolvedLight
+            let dark = themeStore.resolvedDark
             let rendered = await withCheckedContinuation { (continuation: CheckedContinuation<String, Never>) in
                 DispatchQueue.global(qos: .userInitiated).async {
                     let body = MarkdownRenderer.render(markdown)
-                    let result = HTMLTemplate.compose(body: body, title: title)
+                    let result = HTMLTemplate.compose(
+                        body: body,
+                        title: title,
+                        lightTheme: light,
+                        darkTheme: dark
+                    )
                     continuation.resume(returning: result)
                 }
             }
