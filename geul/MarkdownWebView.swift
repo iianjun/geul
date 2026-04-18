@@ -135,8 +135,8 @@ struct MarkdownWebView: NSViewRepresentable {
                 let sanitized = ThemeSanitizer.sanitized(theme.colors)
                 let data = try JSONEncoder().encode(sanitized)
                 guard let colorsJSON = String(data: data, encoding: .utf8) else { return }
-                let mermaidKey = ThemeSanitizer.mermaidKey(for: theme)
-                let script = "setTheme(\(colorsJSON), '\(mermaidKey)')"
+                let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
+                let script = "setTheme(\(colorsJSON), '\(hljsKey)')"
                 webView.evaluateJavaScript(script) { _, error in
                     if let error {
                         print("[geul] setTheme error: \(error)")

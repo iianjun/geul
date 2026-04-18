@@ -3,10 +3,6 @@ import Foundation
 extension HTMLTemplate {
 
     static let mermaidInitScript = """
-    function currentMermaidTheme() {
-        return window.__geulMermaidTheme === 'dark' ? 'dark' : 'default';
-    }
-
     function buildMermaidThemeVariables(colors) {
         colors = colors || {};
         return {
@@ -85,7 +81,7 @@ extension HTMLTemplate {
         renderMath(container);
     }
 
-    function setTheme(colors, mermaidKey) {
+    function setTheme(colors, hljsKey) {
         window.__geulCurrentColors = colors;
 
         var lines = Object.keys(colors).sort().map(function(k) {
@@ -95,10 +91,9 @@ extension HTMLTemplate {
         var styleEl = document.getElementById('geul-theme');
         if (styleEl) styleEl.textContent = css;
 
-        window.__geulMermaidTheme = mermaidKey;
         var hljs = document.getElementById('geul-hljs');
         if (hljs && window.__geulHljsCSS) {
-            hljs.textContent = window.__geulHljsCSS[mermaidKey] || window.__geulHljsCSS.default;
+            hljs.textContent = window.__geulHljsCSS[hljsKey] || window.__geulHljsCSS.default;
         }
 
         var content = document.getElementById('content');

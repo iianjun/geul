@@ -48,10 +48,10 @@ enum ThemeSanitizer {
         return true
     }
 
-    /// Pick the mermaid palette ('dark' or 'default') by inspecting the
+    /// Pick the highlight.js variant ('dark' or 'default') by inspecting the
     /// theme's --bg-primary brightness. Hex-only; unknown formats fall back
     /// to 'default' (light).
-    static func mermaidKey(for theme: Theme) -> String {
+    static func hljsVariantKey(for theme: Theme) -> String {
         guard let background = theme.colors["--bg-primary"],
               let luma = relativeLuminance(of: background) else { return "default" }
         return luma < 0.5 ? "dark" : "default"
