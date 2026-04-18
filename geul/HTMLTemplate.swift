@@ -5,6 +5,8 @@ enum HTMLTemplate {
         let highlightLightCSS = loadResource("github.min", ext: "css") ?? ""
         let highlightDarkCSS = loadResource("github-dark.min", ext: "css") ?? ""
         let katexCSS = loadResource("katex.min", ext: "css")
+        let katexJS = loadResource("katex.min", ext: "js")
+        let autoRenderJS = loadResource("auto-render.min", ext: "js")
         let mermaidJS = loadResource("mermaid.min", ext: "js")
         let hljsLightJSON = ThemeSanitizer.jsStringLiteral(highlightLightCSS)
         let hljsDarkJSON = ThemeSanitizer.jsStringLiteral(highlightDarkCSS)
@@ -33,6 +35,8 @@ enum HTMLTemplate {
             window.__geulMermaidTheme = '\(mermaidKey)';
             window.__geulHljsCSS = { default: \(hljsLightJSON), dark: \(hljsDarkJSON) };
             </script>
+            <script>\(katexJS ?? "")</script>
+            <script>\(autoRenderJS ?? "")</script>
             <script>\(mermaidJS ?? "")</script>
             <script>\(mermaidInitScript)</script>
         </body>
