@@ -1,7 +1,12 @@
 import Foundation
 
 enum HTMLTemplate {
-    static func compose(body: String, title: String) -> String {
+    static func compose(
+        body: String,
+        title: String,
+        lightTheme: Theme,
+        darkTheme: Theme
+    ) -> String {
         let highlightLightCSS = loadResource("github.min", ext: "css")
         let highlightDarkCSS = loadResource("github-dark.min", ext: "css")
         let katexCSS = loadResource("katex.min", ext: "css")
@@ -14,6 +19,7 @@ enum HTMLTemplate {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>\(title)</title>
+            <style id="geul-theme">\(themeCSS(light: lightTheme, dark: darkTheme))</style>
             <style>\(baseCSS)</style>
             <style>
             @media (prefers-color-scheme: light) {
@@ -31,10 +37,35 @@ enum HTMLTemplate {
             <article id="content" class="markdown-body">
             \(body)
             </article>
+            <script>
+            window.__geulLightType = '\(lightTheme.type.rawValue)';
+            window.__geulDarkType = '\(darkTheme.type.rawValue)';
+            </script>
             <script>\(mermaidJS ?? "")</script>
             <script>\(mermaidInitScript)</script>
         </body>
         </html>
+        """
+    }
+
+    static func themeCSS(light: Theme, dark: Theme) -> String {
+        let lightVars = light.colors
+            .sorted { $0.key < $1.key }
+            .map { "    \($0.key): \($0.value);" }
+            .joined(separator: "\n")
+        let darkVars = dark.colors
+            .sorted { $0.key < $1.key }
+            .map { "        \($0.key): \($0.value);" }
+            .joined(separator: "\n")
+        return """
+        :root {
+        \(lightVars)
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+        \(darkVars)
+            }
+        }
         """
     }
 
@@ -66,37 +97,8 @@ private extension HTMLTemplate {
 
     static let baseCSS = """
     :root {
-        --bg-primary: #fafaf9;
-        --bg-secondary: #f5f5f4;
-        --bg-code: #f5f5f4;
-        --bg-code-border: #0d9488;
-        --text-primary: #1c1917;
-        --text-secondary: #78716c;
-        --text-tertiary: #a8a29e;
-        --accent: #0d9488;
-        --accent-soft: rgba(13, 148, 136, 0.08);
-        --border: #e7e5e4;
-        --border-strong: #d6d3d1;
-        --shadow-subtle: 0 1px 2px rgba(28, 25, 23, 0.04);
         --radius: 8px;
         --radius-lg: 12px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-primary: #1c1917;
-            --bg-secondary: #292524;
-            --bg-code: #292524;
-            --bg-code-border: #2dd4bf;
-            --text-primary: #fafaf9;
-            --text-secondary: #a8a29e;
-            --text-tertiary: #78716c;
-            --accent: #2dd4bf;
-            --accent-soft: rgba(45, 212, 191, 0.08);
-            --border: #44403c;
-            --border-strong: #57534e;
-            --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
     }
 
     * {
@@ -387,11 +389,16 @@ private extension HTMLTemplate {
 private extension HTMLTemplate {
 
     static let mermaidInitScript = """
-    function initMermaid() {
+    function currentMermaidTheme() {
         var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var type = isDark ? window.__geulDarkType : window.__geulLightType;
+        return type === 'dark' ? 'dark' : 'default';
+    }
+
+    function initMermaid() {
         mermaid.initialize({
             startOnLoad: false,
-            theme: isDark ? 'dark' : 'default',
+            theme: currentMermaidTheme(),
             securityLevel: 'loose'
         });
     }
@@ -400,10 +407,9 @@ private extension HTMLTemplate {
         var containers = root.querySelectorAll('.mermaid-container');
         if (containers.length === 0) return;
 
-        var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         mermaid.initialize({
             startOnLoad: false,
-            theme: isDark ? 'dark' : 'default',
+            theme: currentMermaidTheme(),
             securityLevel: 'loose'
         });
 
@@ -414,7 +420,11 @@ private extension HTMLTemplate {
             if (!pre) continue;
 
             try {
-                var result = await mermaid.render(prefix + i, pre.textContent);
+                if (!container.dataset.mermaidSource) {
+                    container.dataset.mermaidSource = pre.textContent;
+                }
+                var source = container.dataset.mermaidSource;
+                var result = await mermaid.render(prefix + i, source);
                 pre.innerHTML = result.svg;
                 container.classList.add('rendered');
             } catch(e) {
@@ -432,6 +442,36 @@ private extension HTMLTemplate {
         if (!container) return;
         container.innerHTML = html;
         renderMermaidDiagrams(container);
+    }
+
+    function setTheme(lightColors, darkColors, lightType, darkType) {
+        var lightLines = Object.keys(lightColors).sort().map(function(k) {
+            return '    ' + k + ': ' + lightColors[k] + ';';
+        }).join('\\n');
+        var darkLines = Object.keys(darkColors).sort().map(function(k) {
+            return '        ' + k + ': ' + darkColors[k] + ';';
+        }).join('\\n');
+        var css = ':root {\\n' + lightLines + '\\n}\\n' +
+                  '@media (prefers-color-scheme: dark) {\\n    :root {\\n' +
+                  darkLines + '\\n    }\\n}';
+        var styleEl = document.getElementById('geul-theme');
+        if (styleEl) styleEl.textContent = css;
+        window.__geulLightType = lightType;
+        window.__geulDarkType = darkType;
+
+        var content = document.getElementById('content');
+        if (content) {
+            var containers = content.querySelectorAll('.mermaid-container');
+            containers.forEach(function(c) {
+                c.classList.remove('rendered');
+                var pre = c.querySelector('.mermaid');
+                if (pre && c.dataset.mermaidSource) {
+                    pre.textContent = c.dataset.mermaidSource;
+                    pre.style.display = 'none';
+                }
+            });
+            renderMermaidDiagrams(content);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
