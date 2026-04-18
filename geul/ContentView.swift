@@ -13,8 +13,13 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             if let html {
-                MarkdownWebView(html: html, fileURL: fileURL)
-                    .transition(.opacity)
+                MarkdownWebView(
+                    html: html,
+                    fileURL: fileURL,
+                    lightTheme: themeStore.resolvedLight,
+                    darkTheme: themeStore.resolvedDark
+                )
+                .transition(.opacity)
             }
 
             if isLoading {
