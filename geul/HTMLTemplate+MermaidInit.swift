@@ -7,10 +7,24 @@ extension HTMLTemplate {
         return window.__geulMermaidTheme === 'dark' ? 'dark' : 'default';
     }
 
+    function buildMermaidThemeVariables(colors) {
+        colors = colors || {};
+        return {
+            primaryColor: colors['--bg-secondary'],
+            primaryTextColor: colors['--text-primary'],
+            primaryBorderColor: colors['--border-strong'],
+            lineColor: colors['--text-tertiary'],
+            secondaryColor: colors['--bg-code'],
+            tertiaryColor: colors['--bg-primary'],
+            background: colors['--bg-primary']
+        };
+    }
+
     function initMermaid() {
         mermaid.initialize({
             startOnLoad: false,
-            theme: currentMermaidTheme(),
+            theme: 'base',
+            themeVariables: buildMermaidThemeVariables(window.__geulCurrentColors),
             securityLevel: 'loose'
         });
     }
@@ -21,7 +35,8 @@ extension HTMLTemplate {
 
         mermaid.initialize({
             startOnLoad: false,
-            theme: currentMermaidTheme(),
+            theme: 'base',
+            themeVariables: buildMermaidThemeVariables(window.__geulCurrentColors),
             securityLevel: 'loose'
         });
 
@@ -71,6 +86,8 @@ extension HTMLTemplate {
     }
 
     function setTheme(colors, mermaidKey) {
+        window.__geulCurrentColors = colors;
+
         var lines = Object.keys(colors).sort().map(function(k) {
             return '    ' + k + ': ' + colors[k] + ';';
         }).join('\\n');
