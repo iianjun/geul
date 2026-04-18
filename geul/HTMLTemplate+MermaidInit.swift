@@ -17,6 +17,7 @@ extension HTMLTemplate {
     }
 
     function initMermaid() {
+        if (typeof mermaid === 'undefined') return;
         mermaid.initialize({
             startOnLoad: false,
             theme: 'base',
@@ -28,6 +29,13 @@ extension HTMLTemplate {
     async function renderMermaidDiagrams(root) {
         var containers = root.querySelectorAll('.mermaid-container');
         if (containers.length === 0) return;
+
+        if (typeof mermaid === 'undefined') {
+            containers.forEach(function(c) {
+                showMermaidError(c, new Error('Mermaid library not loaded'));
+            });
+            return;
+        }
 
         mermaid.initialize({
             startOnLoad: false,
@@ -47,17 +55,46 @@ extension HTMLTemplate {
                     container.dataset.mermaidSource = pre.textContent;
                 }
                 var source = container.dataset.mermaidSource;
+                await mermaid.parse(source);
                 var result = await mermaid.render(prefix + i, source);
                 pre.innerHTML = result.svg;
                 container.classList.add('rendered');
             } catch(e) {
-                pre.textContent = 'Mermaid rendering error: ' + e.message;
-                pre.style.display = 'block';
-                pre.style.color = 'var(--text-secondary)';
-                var loading = container.querySelector('.geul-loading');
-                if (loading) loading.style.display = 'none';
+                showMermaidError(container, e);
             }
         }
+    }
+
+    function showMermaidError(container, error) {
+        var source = container.dataset.mermaidSource || '';
+        var message = '';
+        if (error) {
+            message = error.str
+                   || error.message
+                   || (error.hash && error.hash.text)
+                   || String(error);
+        } else {
+            message = String(error);
+        }
+        container.innerHTML = '';
+        container.classList.remove('rendered');
+        container.classList.add('mermaid-error');
+
+        var header = document.createElement('div');
+        header.className = 'mermaid-error-header';
+        header.textContent = 'Mermaid rendering failed';
+
+        var msg = document.createElement('div');
+        msg.className = 'mermaid-error-message';
+        msg.textContent = message;
+
+        var pre = document.createElement('pre');
+        pre.className = 'mermaid-error-source';
+        pre.textContent = source;
+
+        container.appendChild(header);
+        container.appendChild(msg);
+        container.appendChild(pre);
     }
 
     function renderMath(root) {
@@ -77,7 +114,11 @@ extension HTMLTemplate {
         var container = document.getElementById('content');
         if (!container) return;
         container.innerHTML = html;
-        renderMermaidDiagrams(container);
+        try {
+            renderMermaidDiagrams(container);
+        } catch(e) {
+            console.error('[geul] Mermaid render failed:', e);
+        }
         renderMath(container);
     }
 
@@ -101,10 +142,18 @@ extension HTMLTemplate {
             var containers = content.querySelectorAll('.mermaid-container');
             containers.forEach(function(c) {
                 c.classList.remove('rendered');
-                var pre = c.querySelector('.mermaid');
-                if (pre && c.dataset.mermaidSource) {
-                    pre.textContent = c.dataset.mermaidSource;
-                    pre.style.display = 'none';
+                c.classList.remove('mermaid-error');
+                if (c.dataset.mermaidSource) {
+                    c.innerHTML =
+                        '<div class="geul-loading">' +
+                        '<div class="bar"></div><div class="bar"></div>' +
+                        '<div class="bar"></div><div class="bar"></div>' +
+                        '</div>' +
+                        '<pre class="mermaid" style="display:none;">' +
+                        c.dataset.mermaidSource.replace(/&/g, '&amp;')
+                                              .replace(/</g, '&lt;')
+                                              .replace(/>/g, '&gt;') +
+                        '</pre>';
                 }
             });
             renderMermaidDiagrams(content);
@@ -112,8 +161,12 @@ extension HTMLTemplate {
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        initMermaid();
-        renderMermaidDiagrams(document.getElementById('content'));
+        try {
+            initMermaid();
+            renderMermaidDiagrams(document.getElementById('content'));
+        } catch(e) {
+            console.error('[geul] Mermaid init failed:', e);
+        }
         renderMath(document.getElementById('content'));
     });
     """
