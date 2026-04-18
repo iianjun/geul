@@ -47,4 +47,45 @@ enum ThemeSanitizer {
         }
         return true
     }
+
+    /// Pick the mermaid palette ('dark' or 'default') by inspecting the
+    /// theme's --bg-primary brightness. Hex-only; unknown formats fall back
+    /// to 'default' (light).
+    static func mermaidKey(for theme: Theme) -> String {
+        guard let background = theme.colors["--bg-primary"],
+              let luma = relativeLuminance(of: background) else { return "default" }
+        return luma < 0.5 ? "dark" : "default"
+    }
+
+    private static func relativeLuminance(of cssColor: String) -> Double? {
+        let trimmed = cssColor.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("#") else { return nil }
+        let hex = String(trimmed.dropFirst())
+        guard let rgb = UInt32(hex, radix: 16) else { return nil }
+        let red, green, blue: Double
+        switch hex.count {
+        case 6:
+            red = Double((rgb >> 16) & 0xFF) / 255.0
+            green = Double((rgb >> 8) & 0xFF) / 255.0
+            blue = Double(rgb & 0xFF) / 255.0
+        case 3:
+            red = Double(((rgb >> 8) & 0xF) * 0x11) / 255.0
+            green = Double(((rgb >> 4) & 0xF) * 0x11) / 255.0
+            blue = Double((rgb & 0xF) * 0x11) / 255.0
+        default:
+            return nil
+        }
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+    }
+
+    /// Safely embed a string as a JS string literal using JSON escaping.
+    static func jsStringLiteral(_ value: String) -> String {
+        guard let data = try? JSONSerialization.data(
+            withJSONObject: value,
+            options: .fragmentsAllowed
+        ), let literal = String(data: data, encoding: .utf8) else {
+            return "\"\""
+        }
+        return literal
+    }
 }
