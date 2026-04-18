@@ -24,11 +24,17 @@ final class ThemeStore: ObservableObject {
 
     enum ThemeStoreError: LocalizedError {
         case cannotImportBuiltInName
+        case invalidThemeName(String)
+        case slugCollision(incoming: String, existing: String)
 
         var errorDescription: String? {
             switch self {
             case .cannotImportBuiltInName:
                 return "The name Default is reserved for geul's built-in theme."
+            case .invalidThemeName(let name):
+                return "\"\(name)\" is not a valid theme name — use letters, digits, or dashes."
+            case .slugCollision(let incoming, let existing):
+                return "\"\(incoming)\" conflicts with existing theme \"\(existing)\" — rename one of them."
             }
         }
     }
@@ -73,8 +79,8 @@ final class ThemeStore: ObservableObject {
         selectInternal(name: name, persist: true)
     }
 
-    /// Copy `url` into `~/.config/geul/themes/<name>-<type>.json`, reload list.
-    /// Throws a user-friendly error if the file cannot be decoded or the copy fails.
+    /// Copy `url` into `~/.config/geul/themes/<slug>-<type>.json`, reload list.
+    /// Throws a user-friendly error if decoding, slug validation, collision detection, or I/O fails.
     func importTheme(from url: URL) throws {
         let data = try Data(contentsOf: url)
         let theme = try JSONDecoder().decode(Theme.self, from: data)
@@ -82,18 +88,50 @@ final class ThemeStore: ObservableObject {
             throw ThemeStoreError.cannotImportBuiltInName
         }
 
+        let slug = Self.slugify(theme.name)
+        guard !slug.isEmpty else {
+            throw ThemeStoreError.invalidThemeName(theme.name)
+        }
+
         try FileManager.default.createDirectory(
             at: themesDir,
             withIntermediateDirectories: true
         )
 
-        let slug = Self.slugify(theme.name)
         let dest = themesDir.appendingPathComponent("\(slug)-\(theme.type.rawValue).json")
 
-        if FileManager.default.fileExists(atPath: dest.path) {
-            try FileManager.default.removeItem(at: dest)
+        // No-op if the user picked the file that's already our destination.
+        let canonicalSource = url.resolvingSymlinksInPath().standardizedFileURL
+        let canonicalDest = dest.resolvingSymlinksInPath().standardizedFileURL
+        if canonicalSource == canonicalDest {
+            reload()
+            return
         }
-        try FileManager.default.copyItem(at: url, to: dest)
+
+        // Slug collision: a different theme name already occupies this path.
+        // Refuse rather than silently overwrite someone else's work.
+        if let existing = try? Data(contentsOf: dest),
+           let existingTheme = try? JSONDecoder().decode(Theme.self, from: existing),
+           existingTheme.name.localizedCaseInsensitiveCompare(theme.name) != .orderedSame {
+            throw ThemeStoreError.slugCollision(
+                incoming: theme.name,
+                existing: existingTheme.name
+            )
+        }
+
+        // Stage the payload to a temp file on the same volume, then atomically
+        // replace `dest`. We write the already-validated bytes rather than
+        // re-reading the source in case it changed between decode and copy.
+        let tmpURL = themesDir.appendingPathComponent(".import-\(UUID().uuidString).json")
+        try data.write(to: tmpURL, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        if FileManager.default.fileExists(atPath: dest.path) {
+            _ = try FileManager.default.replaceItemAt(dest, withItemAt: tmpURL)
+        } else {
+            try FileManager.default.moveItem(at: tmpURL, to: dest)
+        }
+
         reload()
     }
 
