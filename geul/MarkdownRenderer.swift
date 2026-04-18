@@ -33,12 +33,6 @@ enum MarkdownRenderer {
             ctx.evaluateScript(script)
         }
 
-        // Load KaTeX
-        if let url = resourceBundle.url(forResource: "katex.min", withExtension: "js", subdirectory: "Resources"),
-           let script = try? String(contentsOf: url, encoding: .utf8) {
-            ctx.evaluateScript(script)
-        }
-
         // Configure marked
         ctx.evaluateScript("""
         (function() {
@@ -97,20 +91,6 @@ enum MarkdownRenderer {
             globalThis.renderMarkdown = function(input) {
                 return marked.parse(input);
             };
-
-            globalThis.renderKaTeX = function(text) {
-                text = text.replace(/\\$\\$([\\s\\S]+?)\\$\\$/g, function(match, math) {
-                    try {
-                        return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
-                    } catch(e) { return match; }
-                });
-                text = text.replace(/(?<!\\$)\\$(?!\\$)(.+?)(?<!\\$)\\$(?!\\$)/g, function(match, math) {
-                    try {
-                        return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
-                    } catch(e) { return match; }
-                });
-                return text;
-            };
         })();
         """)
 
@@ -123,15 +103,8 @@ enum MarkdownRenderer {
 
             guard let result = context.evaluateScript("renderMarkdown(_input)"),
                   !result.isUndefined,
-                  var html = result.toString() else {
+                  let html = result.toString() else {
                 return "<p>Failed to render markdown</p>"
-            }
-
-            // KaTeX post-process
-            context.setObject(html, forKeyedSubscript: "_html" as NSString)
-            if let katexResult = context.evaluateScript("renderKaTeX(_html)"),
-               let katexHTML = katexResult.toString() {
-                html = katexHTML
             }
 
             return html
