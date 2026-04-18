@@ -1,10 +1,11 @@
-import Combine
 import SwiftUI
 import WebKit
 
 struct MarkdownWebView: NSViewRepresentable {
     let html: String
     let fileURL: URL?
+    let lightTheme: Theme
+    let darkTheme: Theme
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -20,15 +21,30 @@ struct MarkdownWebView: NSViewRepresentable {
 
         context.coordinator.lastHTML = html
         context.coordinator.fileURL = fileURL
+        context.coordinator.lastAppliedLight = lightTheme
+        context.coordinator.lastAppliedDark = darkTheme
         webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
         return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
-        guard html != context.coordinator.lastHTML else { return }
-        context.coordinator.lastHTML = html
-        webView.alphaValue = 0
-        webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
+        if html != context.coordinator.lastHTML {
+            // Content changed: full reload. The new HTML embeds the current
+            // themes, so update the applied baseline in lockstep.
+            context.coordinator.lastHTML = html
+            context.coordinator.lastAppliedLight = lightTheme
+            context.coordinator.lastAppliedDark = darkTheme
+            webView.alphaValue = 0
+            webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
+            return
+        }
+
+        if context.coordinator.lastAppliedLight != lightTheme
+            || context.coordinator.lastAppliedDark != darkTheme {
+            context.coordinator.lastAppliedLight = lightTheme
+            context.coordinator.lastAppliedDark = darkTheme
+            context.coordinator.applyTheme(light: lightTheme, dark: darkTheme)
+        }
     }
 
     // MARK: - Coordinator
@@ -38,7 +54,11 @@ struct MarkdownWebView: NSViewRepresentable {
         var fileURL: URL?
         var fileWatcher: FileWatcher?
         weak var webView: WKWebView?
-        private var themeCancellables = Set<AnyCancellable>()
+        var lastAppliedLight: Theme?
+        var lastAppliedDark: Theme?
+        // A theme change that arrived before the first navigation finished.
+        // Drained in didFinish so the fresh WebView picks it up.
+        private var pendingThemeApply: (Theme, Theme)?
 
         // swiftlint:disable:next implicitly_unwrapped_optional
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -50,7 +70,11 @@ struct MarkdownWebView: NSViewRepresentable {
             if self.webView == nil {
                 self.webView = webView
                 startWatching()
-                observeThemeChanges()
+            }
+
+            if let (light, dark) = pendingThemeApply {
+                pendingThemeApply = nil
+                applyTheme(light: light, dark: dark)
             }
         }
 
@@ -104,23 +128,15 @@ struct MarkdownWebView: NSViewRepresentable {
             webView?.window?.title = title
         }
 
-        // MARK: - Theme Observation
+        // MARK: - Theme Patching
 
-        private func observeThemeChanges() {
-            let store = ThemeStore.shared
-            store.$resolvedLight
-                .combineLatest(store.$resolvedDark)
-                .dropFirst()
-                .debounce(for: .milliseconds(16), scheduler: DispatchQueue.main)
-                .removeDuplicates(by: ==)
-                .sink { [weak self] light, dark in
-                    self?.applyTheme(light: light, dark: dark)
-                }
-                .store(in: &themeCancellables)
-        }
-
-        private func applyTheme(light: Theme, dark: Theme) {
-            guard let webView else { return }
+        func applyTheme(light: Theme, dark: Theme) {
+            // Queue until the first navigation completes; otherwise the
+            // <style id="geul-theme"> element doesn't exist yet.
+            guard let webView, webView.isLoading == false else {
+                pendingThemeApply = (light, dark)
+                return
+            }
             do {
                 let sanitizedLight = ThemeSanitizer.sanitized(light.colors)
                 let sanitizedDark = ThemeSanitizer.sanitized(dark.colors)
