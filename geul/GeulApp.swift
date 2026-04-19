@@ -52,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
+        window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(
             rootView: ContentView(fileURL: fileURL)
                 .frame(minWidth: 500, minHeight: 300)
