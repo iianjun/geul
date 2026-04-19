@@ -1,2 +1,33 @@
 #!/bin/bash
-open -a "geul" "$@"
+# geul — CLI entry point.
+# No args + interactive terminal → TUI fuzzy finder (inline exec).
+# Any args → GUI via LaunchServices (existing behavior).
+
+set -eu
+
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+    dir="$(cd -P "$(dirname "$src")" && pwd)"
+    target="$(readlink "$src")"
+    if [[ $target = /* ]]; then
+        src="$target"
+    else
+        src="$dir/$target"
+    fi
+done
+wrapper_dir="$(cd -P "$(dirname "$src")" && pwd)"
+# SPM은 Resources/를 .app/Contents/Resources/Resources/ 로 복사. 두 레벨 위로.
+app_root="${wrapper_dir%/Contents/Resources/Resources}"
+app_macos="$app_root/Contents/MacOS/geul"
+
+if [[ ! -x "$app_macos" ]]; then
+    echo "geul: cannot locate app binary (tried: $app_macos)" >&2
+    echo "If /usr/local/bin/geul was copied instead of symlinked, reinstall via 'make install' or Homebrew cask." >&2
+    exit 1
+fi
+
+if [[ $# -eq 0 ]]; then
+    exec "$app_macos"
+else
+    open -a "geul" "$@"
+fi
