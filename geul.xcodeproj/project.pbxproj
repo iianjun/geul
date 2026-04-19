@@ -23,6 +23,7 @@
 		B7F3A1D2E4C6089B00000081 /* HTMLTemplate+Loading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000071 /* HTMLTemplate+Loading.swift */; };
 		B7F3A1D2E4C6089B00000082 /* HTMLTemplate+HighlightOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000072 /* HTMLTemplate+HighlightOverride.swift */; };
 		B7F3A1D2E4C6089B00000083 /* HTMLTemplate+MermaidInit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */; };
+		B7F3A1D2E4C6089B00000092 /* IgnoreList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000091 /* IgnoreList.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 		B7F3A1D2E4C6089B00000071 /* HTMLTemplate+Loading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+Loading.swift"; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000072 /* HTMLTemplate+HighlightOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+HighlightOverride.swift"; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+MermaidInit.swift"; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B00000091 /* IgnoreList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IgnoreList.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,10 +83,20 @@
 				B7F3A1D2E4C6089B0000001A /* ThemeStore.swift */,
 				B7F3A1D2E4C6089B0000001B /* SettingsView.swift */,
 				B7F3A1D2E4C6089B0000001C /* ThemeSanitizer.swift */,
+				B7F3A1D2E4C6089B00000090 /* TUI */,
 				B7F3A1D2E4C6089B00000017 /* Resources */,
 				B7F3A1D2E4C6089B00000012 /* Assets.xcassets */,
 			);
 			path = geul;
+			sourceTree = "<group>";
+		};
+		B7F3A1D2E4C6089B00000090 /* TUI */ = {
+			isa = PBXGroup;
+			children = (
+				B7F3A1D2E4C6089B00000091 /* IgnoreList.swift */,
+			);
+			name = TUI;
+			path = TUI;
 			sourceTree = "<group>";
 		};
 		B7F3A1D2E4C6089B00000004 /* Products */ = {
@@ -179,6 +191,7 @@
 				B7F3A1D2E4C6089B0000002A /* ThemeStore.swift in Sources */,
 				B7F3A1D2E4C6089B0000002B /* SettingsView.swift in Sources */,
 				B7F3A1D2E4C6089B0000002C /* ThemeSanitizer.swift in Sources */,
+				B7F3A1D2E4C6089B00000092 /* IgnoreList.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
