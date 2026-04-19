@@ -1,6 +1,5 @@
 import SwiftUI
 
-@main
 struct GeulApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
