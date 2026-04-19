@@ -11,5 +11,10 @@ let package = Package(
             exclude: ["Assets.xcassets", "geul.entitlements"],
             resources: [.copy("Resources")]
         ),
+        .testTarget(
+            name: "geulTests",
+            dependencies: ["geul"],
+            path: "Tests/geulTests"
+        ),
     ]
 )
