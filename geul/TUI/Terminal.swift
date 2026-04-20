@@ -19,6 +19,26 @@ enum Terminal {
         }
     }
 
+    // swiftlint:disable:next type_name
+    enum box {
+        // swiftlint:disable:next identifier_name
+        static let h        = "─"
+        // swiftlint:disable:next identifier_name
+        static let v        = "│"
+        // swiftlint:disable:next identifier_name
+        static let tl       = "┌"
+        // swiftlint:disable:next identifier_name
+        static let tr       = "┐"
+        // swiftlint:disable:next identifier_name
+        static let bl       = "└"
+        // swiftlint:disable:next identifier_name
+        static let br       = "┘"
+        static let teeDown  = "┬"
+        static let teeUp    = "┴"
+        static let teeLeft  = "┤"
+        static let teeRight = "├"
+    }
+
     private static var originalTermios: termios?
     private static var didSetup = false
 
