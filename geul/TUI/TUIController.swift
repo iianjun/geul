@@ -388,7 +388,7 @@ enum TUIController {
         return String(text.prefix(max(0, width)))
     }
 
-    private static func previewLines(for url: URL, maxLines: Int) -> [String] {
+    static func previewLines(for url: URL, maxLines: Int) -> [String] {
         if let cached = previewCache[url] {
             previewCacheOrder.removeAll { $0 == url }
             previewCacheOrder.append(url)
@@ -400,6 +400,7 @@ enum TUIController {
         defer { try? handle.close() }
         let maxBytes = maxLines * 256
         let data = (try? handle.read(upToCount: maxBytes)) ?? Data()
+        guard !data.isEmpty else { return ["(preview unavailable)"] }
         guard let str = String(data: data, encoding: .utf8) else {
             return ["(preview unavailable)"]
         }
