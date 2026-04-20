@@ -135,4 +135,16 @@ final class TUIControllerRenderTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - previewLines
+
+    func testPreviewLinesReturnsUnavailableForEmptyFile() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("geul-test-\(UUID().uuidString).md")
+        try Data().write(to: tmp)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let lines = TUIController.previewLines(for: tmp, maxLines: 5)
+        XCTAssertEqual(lines, ["(preview unavailable)"])
+    }
 }
