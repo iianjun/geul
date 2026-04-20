@@ -73,4 +73,66 @@ final class TUIControllerRenderTests: XCTestCase {
         // width 12, prefix 2 → keep 10 path chars ("this-is-a-") and emit no padding.
         XCTAssertEqual(row, "  this-is-a-")
     }
+
+    // MARK: - drawBoxFrame
+
+    func testDrawBoxFrameOnePane() {
+        // rows=5, cols=20, 1-pane. Frame layout:
+        // row 1: ┌─ FILES 1/2 ─────┐  (title padded to cols)
+        // row 2: │                  │  (content, single row)
+        // row 3: ├──────────────────┤  (middle separator)
+        // row 4: │ ❯ q               │  (status: prompt + query + padding)
+        // row 5: └──────────────────┘  (bottom)
+        let frame = TUIController.drawBoxFrame(
+            rows: 5, cols: 20,
+            splitCol: nil,
+            filesTitle: "FILES 1/2",
+            previewTitle: nil,
+            query: "q"
+        )
+        // Top-left + bottom-right corners present
+        XCTAssertTrue(frame.contains(Terminal.box.tl))
+        XCTAssertTrue(frame.contains(Terminal.box.br))
+        // Title embedded after "┌─ "
+        XCTAssertTrue(frame.contains("┌─ FILES 1/2"))
+        // Prompt + query on status line
+        XCTAssertTrue(frame.contains("❯ q"))
+        // Middle separator has teeRight + teeLeft (no teeUp because 1-pane)
+        XCTAssertTrue(frame.contains(Terminal.box.teeRight))
+        XCTAssertTrue(frame.contains(Terminal.box.teeLeft))
+        XCTAssertFalse(frame.contains(Terminal.box.teeUp))
+        XCTAssertFalse(frame.contains(Terminal.box.teeDown))
+    }
+
+    func testDrawBoxFrameTwoPane() {
+        // 2-pane: teeDown on top row, teeUp on middle row, vertical splitter
+        let frame = TUIController.drawBoxFrame(
+            rows: 6, cols: 40,
+            splitCol: 20,
+            filesTitle: "FILES 5/10",
+            previewTitle: "PREVIEW",
+            query: ""
+        )
+        XCTAssertTrue(frame.contains("┌─ FILES 5/10"))
+        XCTAssertTrue(frame.contains("┬─ PREVIEW"))
+        XCTAssertTrue(frame.contains(Terminal.box.teeUp))
+        XCTAssertTrue(frame.contains(Terminal.box.teeDown))
+    }
+
+    func testDrawBoxFrameCursorMovesCoverEveryRow() {
+        // Each row should be addressed by a moveCursor escape.
+        let frame = TUIController.drawBoxFrame(
+            rows: 5, cols: 20,
+            splitCol: nil,
+            filesTitle: "FILES 0/0",
+            previewTitle: nil,
+            query: ""
+        )
+        for row in 1...5 {
+            XCTAssertTrue(
+                frame.contains(Terminal.ansi.moveCursor(row: row, col: 1)),
+                "frame should address row \(row)"
+            )
+        }
+    }
 }
