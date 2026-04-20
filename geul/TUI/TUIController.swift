@@ -207,9 +207,9 @@ enum TUIController {
                 if listIdx < state.visible.count {
                     let entry = state.visible[listIdx]
                     let isCursor = listIdx == state.cursor
-                    buf += formatListRow(entry: entry,
-                                         width: showPreview ? splitCol - 1 : cols,
-                                         selected: isCursor)
+                    buf += composeRow(entry: entry,
+                                      width: showPreview ? splitCol - 1 : cols,
+                                      selected: isCursor)
                 } else if state.visible.isEmpty && row == listHeight / 2 {
                     let msg = "No matches"
                     let leftWidth = showPreview ? splitCol : cols
@@ -242,7 +242,7 @@ enum TUIController {
         Terminal.write(buf)
     }
 
-    private static func formatListRow(entry: MatchedEntry, width: Int, selected: Bool) -> String {
+    static func composeRow(entry: MatchedEntry, width: Int, selected: Bool) -> String {
         let prefix = selected ? "❯ " : "  "
         let path = entry.entry.relativePath
         let rendered = highlight(path: path, indices: Set(entry.matchIndices))
@@ -261,12 +261,12 @@ enum TUIController {
             : trimmed
     }
 
-    private static func highlight(path: String, indices: Set<Int>) -> String {
+    static func highlight(path: String, indices: Set<Int>) -> String {
         guard !indices.isEmpty else { return path }
         var out = ""
         for (idx, char) in path.enumerated() {
             if indices.contains(idx) {
-                out += Terminal.ansi.underlineOn + String(char) + Terminal.ansi.reset
+                out += Terminal.ansi.underlineOn + String(char) + Terminal.ansi.underlineOff
             } else {
                 out += String(char)
             }
