@@ -38,6 +38,10 @@ final class TerminalTests: XCTestCase {
         XCTAssertEqual(Terminal.ansi.underlineOn, "\u{1B}[4m")
     }
 
+    func testUnderlineOff() {
+        XCTAssertEqual(Terminal.ansi.underlineOff, "\u{1B}[24m")
+    }
+
     func testMoveCursorToRowCol() {
         XCTAssertEqual(Terminal.ansi.moveCursor(row: 5, col: 10), "\u{1B}[5;10H")
     }
