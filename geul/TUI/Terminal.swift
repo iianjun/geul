@@ -13,6 +13,7 @@ enum Terminal {
         static let reset = "\u{1B}[0m"
         static let inverseOn = "\u{1B}[7m"
         static let underlineOn = "\u{1B}[4m"
+        static let underlineOff = "\u{1B}[24m"
         static func moveCursor(row: Int, col: Int) -> String {
             "\u{1B}[\(row);\(col)H"
         }
