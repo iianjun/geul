@@ -68,7 +68,7 @@ enum TUIController {
     }
 
     static func visibleListHeight(_ rows: Int) -> Int {
-        max(1, rows - 1) // 상태줄 1줄 제외
+        max(1, rows - 4) // 프레임: top(1) + separator(1) + status(1) + bottom(1) = 4줄 제외
     }
 
     static func adjustScroll(cursor: Int, offset: Int, total: Int, visibleHeight: Int) -> Int {
