@@ -45,4 +45,28 @@ final class TerminalTests: XCTestCase {
     func testMoveCursorToRowCol() {
         XCTAssertEqual(Terminal.ansi.moveCursor(row: 5, col: 10), "\u{1B}[5;10H")
     }
+
+    func testBoxHorizontal() {
+        XCTAssertEqual(Terminal.box.h, "─")
+        XCTAssertEqual(Terminal.box.h.count, 1)
+    }
+
+    func testBoxVertical() {
+        XCTAssertEqual(Terminal.box.v, "│")
+        XCTAssertEqual(Terminal.box.v.count, 1)
+    }
+
+    func testBoxCorners() {
+        XCTAssertEqual(Terminal.box.tl, "┌")
+        XCTAssertEqual(Terminal.box.tr, "┐")
+        XCTAssertEqual(Terminal.box.bl, "└")
+        XCTAssertEqual(Terminal.box.br, "┘")
+    }
+
+    func testBoxTees() {
+        XCTAssertEqual(Terminal.box.teeDown, "┬")
+        XCTAssertEqual(Terminal.box.teeUp, "┴")
+        XCTAssertEqual(Terminal.box.teeLeft, "┤")
+        XCTAssertEqual(Terminal.box.teeRight, "├")
+    }
 }
