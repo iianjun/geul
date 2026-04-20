@@ -261,6 +261,100 @@ enum TUIController {
             : trimmed
     }
 
+    /// Emit the static frame: top border with titles, left/right borders for each content row,
+    /// middle separator above the status bar, status bar with prompt + query, bottom border.
+    /// Content cells are left empty — `render(_:)` overlays them.
+    static func drawBoxFrame(
+        rows: Int,
+        cols: Int,
+        splitCol: Int?,           // nil = 1-pane, otherwise the col index of the vertical splitter
+        filesTitle: String,
+        previewTitle: String?,    // nil = 1-pane
+        query: String
+    ) -> String {
+        var buf = ""
+        // swiftlint:disable:next identifier_name
+        let h = Terminal.box.h
+
+        // --- Row 1: top border with titles ---
+        buf += Terminal.ansi.moveCursor(row: 1, col: 1)
+        if let splitCol, let previewTitle {
+            // 2-pane. teeDown lands at col splitCol, so the left title segment covers
+            // cols 2..splitCol-1 = splitCol - 2 glyphs; the right covers splitCol+1..cols-1.
+            let leftInner = splitCol - 2
+            let rightInner = cols - splitCol - 1
+            buf += Terminal.box.tl + topTitleSegment(title: filesTitle, innerWidth: leftInner)
+            buf += Terminal.box.teeDown + topTitleSegment(title: previewTitle, innerWidth: rightInner)
+            buf += Terminal.box.tr
+        } else {
+            // 1-pane
+            buf += Terminal.box.tl + topTitleSegment(title: filesTitle, innerWidth: cols - 2)
+            buf += Terminal.box.tr
+        }
+
+        // --- Rows 2 .. rows-3: content body (borders + splitter only) ---
+        for row in 2...(rows - 3) {
+            buf += Terminal.ansi.moveCursor(row: row, col: 1)
+            buf += Terminal.box.v
+            if let splitCol {
+                buf += String(repeating: " ", count: splitCol - 2)
+                buf += Terminal.box.v
+                buf += String(repeating: " ", count: cols - splitCol - 1)
+            } else {
+                buf += String(repeating: " ", count: cols - 2)
+            }
+            buf += Terminal.box.v
+        }
+
+        // --- Row rows-2: middle separator ---
+        buf += Terminal.ansi.moveCursor(row: rows - 2, col: 1)
+        if let splitCol {
+            // ├─…─┴─…─┤
+            buf += Terminal.box.teeRight
+            buf += String(repeating: h, count: splitCol - 2)
+            buf += Terminal.box.teeUp
+            buf += String(repeating: h, count: cols - splitCol - 1)
+            buf += Terminal.box.teeLeft
+        } else {
+            // ├─…─┤
+            buf += Terminal.box.teeRight
+            buf += String(repeating: h, count: cols - 2)
+            buf += Terminal.box.teeLeft
+        }
+
+        // --- Row rows-1: status bar ---
+        // Layout: "│" + " " + "❯ <query>" + padding + "│"  (total width = cols)
+        // If the query outgrows the remaining space, keep the tail so the latest keystrokes stay visible.
+        buf += Terminal.ansi.moveCursor(row: rows - 1, col: 1)
+        let maxQueryLen = max(0, cols - 5) // cols - "│ ❯ " (4) - trailing "│" (1)
+        let shownQuery = query.count > maxQueryLen
+            ? String(query.suffix(maxQueryLen))
+            : query
+        let status = "❯ \(shownQuery)"
+        let padTarget = max(0, cols - 3 - status.count)
+        buf += Terminal.box.v + " " + status + String(repeating: " ", count: padTarget)
+        buf += Terminal.box.v
+
+        // --- Row rows: bottom border ---
+        buf += Terminal.ansi.moveCursor(row: rows, col: 1)
+        buf += Terminal.box.bl + String(repeating: h, count: cols - 2) + Terminal.box.br
+
+        return buf
+    }
+
+    /// "─ TITLE ────…─" padded with horizontal-dash to exactly `innerWidth` glyphs.
+    /// If "─ TITLE " is already longer than `innerWidth`, truncate from the right so the frame stays flush.
+    /// Used between ┌/┬ and ┬/┐ corners.
+    private static func topTitleSegment(title: String, innerWidth: Int) -> String {
+        // swiftlint:disable:next identifier_name
+        let h = Terminal.box.h
+        let full = "\(h) \(title) "
+        if full.count >= innerWidth {
+            return String(full.prefix(innerWidth))
+        }
+        return full + String(repeating: h, count: innerWidth - full.count)
+    }
+
     static func highlight(path: String, indices: Set<Int>) -> String {
         guard !indices.isEmpty else { return path }
         var out = ""
