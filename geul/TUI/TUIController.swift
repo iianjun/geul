@@ -68,7 +68,7 @@ enum TUIController {
     }
 
     static func visibleListHeight(_ rows: Int) -> Int {
-        max(1, rows - 1) // 상태줄 1줄 제외
+        max(1, rows - 4) // 프레임: top(1) + separator(1) + status(1) + bottom(1) = 4줄 제외
     }
 
     static func adjustScroll(cursor: Int, offset: Int, total: Int, visibleHeight: Int) -> Int {
@@ -173,76 +173,91 @@ enum TUIController {
         return 0
     }
 
+    // swiftlint:disable:next function_body_length
     private static func render(_ state: TUIState) {
-        var buf = ""
-        buf += Terminal.ansi.moveCursorHome
-        buf += Terminal.ansi.clearScreen
+        var buf = Terminal.ansi.moveCursorHome + Terminal.ansi.clearScreen
 
         let rows = state.winSize.rows
         let cols = state.winSize.cols
-        let listHeight = visibleListHeight(rows)
-        let splitCol = max(20, min(cols - 40, cols * 4 / 10)) // 좌측 폭 (최소 20, 최대 cols-40, 기본 40%)
-        let showPreview = cols >= 80
 
-        // --- 리스트 + 프리뷰 ---
-        if state.entries.isEmpty {
-            let msg = "No markdown files found in ."
-            let row = rows / 2
-            let col = max(1, (cols - msg.count) / 2)
-            buf += Terminal.ansi.moveCursor(row: row, col: col)
-            buf += msg
-        } else {
-            let preview: [String]
-            if showPreview, !state.visible.isEmpty {
-                preview = previewLines(for: state.visible[state.cursor].entry.url,
-                                       maxLines: listHeight)
-            } else {
-                preview = []
-            }
-
-            for row in 0..<listHeight {
-                buf += Terminal.ansi.moveCursor(row: row + 1, col: 1)
-                // 좌측
-                let listIdx = state.scrollOffset + row
-                if listIdx < state.visible.count {
-                    let entry = state.visible[listIdx]
-                    let isCursor = listIdx == state.cursor
-                    buf += formatListRow(entry: entry,
-                                         width: showPreview ? splitCol - 1 : cols,
-                                         selected: isCursor)
-                } else if state.visible.isEmpty && row == listHeight / 2 {
-                    let msg = "No matches"
-                    let leftWidth = showPreview ? splitCol : cols
-                    let pad = max(0, (leftWidth - msg.count) / 2)
-                    buf += String(repeating: " ", count: pad) + msg
-                }
-
-                // 우측 preview
-                if showPreview {
-                    buf += Terminal.ansi.moveCursor(row: row + 1, col: splitCol + 1)
-                    if row < preview.count {
-                        buf += truncate(preview[row], to: cols - splitCol)
-                    }
-                }
-            }
+        // Too small to draw the frame: print a single placeholder line.
+        guard rows >= 5, cols >= 10 else {
+            buf += "geul: terminal too small"
+            Terminal.write(buf)
+            return
         }
 
-        // --- 하단 상태줄 ---
-        buf += Terminal.ansi.moveCursor(row: rows, col: 1)
+        let hasPreview = cols >= 80 && !state.entries.isEmpty
+        let splitCol: Int? = hasPreview
+            ? max(20, min(cols - 30, cols * 6 / 10))
+            : nil
+        let previewSplit = splitCol ?? 0
+        let listWidth = hasPreview ? previewSplit - 2 : cols - 2
+        let previewWidth = hasPreview ? cols - previewSplit - 1 : 0
+        let contentRows = rows - 4 // title(1) + separator(1) + status(1) + bottom(1)
+
         let matched = state.visible.count
         let total = state.entries.count
-        let status: String
+        let filesTitle = "FILES \(matched)/\(total)"
+
+        // 1) Frame
+        buf += drawBoxFrame(
+            rows: rows, cols: cols,
+            splitCol: splitCol,
+            filesTitle: filesTitle,
+            previewTitle: hasPreview ? "PREVIEW" : nil,
+            query: state.query
+        )
+
+        // 2) List cell
         if state.entries.isEmpty {
-            status = "0/0    (press Esc or Ctrl-C to exit)"
+            buf += centeredMessage("No markdown files here",
+                                   atRow: 2 + contentRows / 2,
+                                   col: 2,
+                                   width: cols - 2)
+        } else if state.visible.isEmpty {
+            buf += centeredMessage("No matches",
+                                   atRow: 2 + contentRows / 2,
+                                   col: 2,
+                                   width: listWidth)
         } else {
-            status = "\(matched)/\(total)    ❯ \(state.query)_"
+            for localRow in 0..<contentRows {
+                let listIdx = state.scrollOffset + localRow
+                guard listIdx < state.visible.count else { break }
+                let row = 2 + localRow
+                buf += Terminal.ansi.moveCursor(row: row, col: 2)
+                buf += composeRow(
+                    entry: state.visible[listIdx],
+                    width: listWidth,
+                    selected: listIdx == state.cursor
+                )
+            }
         }
-        buf += truncate(status, to: cols)
+
+        // 3) Preview cell
+        if hasPreview, !state.visible.isEmpty {
+            let previewRows = previewLines(
+                for: state.visible[state.cursor].entry.url,
+                maxLines: contentRows
+            )
+            for localRow in 0..<contentRows {
+                let row = 2 + localRow
+                guard localRow < previewRows.count else { break }
+                buf += Terminal.ansi.moveCursor(row: row, col: previewSplit + 1)
+                buf += truncate(previewRows[localRow], to: previewWidth)
+            }
+        }
 
         Terminal.write(buf)
     }
 
-    private static func formatListRow(entry: MatchedEntry, width: Int, selected: Bool) -> String {
+    /// Place a short message horizontally centered inside the given cell, with ANSI move-cursor.
+    private static func centeredMessage(_ text: String, atRow row: Int, col startCol: Int, width: Int) -> String {
+        let pad = max(0, (width - text.count) / 2)
+        return Terminal.ansi.moveCursor(row: row, col: startCol + pad) + text
+    }
+
+    static func composeRow(entry: MatchedEntry, width: Int, selected: Bool) -> String {
         let prefix = selected ? "❯ " : "  "
         let path = entry.entry.relativePath
         let rendered = highlight(path: path, indices: Set(entry.matchIndices))
@@ -261,12 +276,106 @@ enum TUIController {
             : trimmed
     }
 
-    private static func highlight(path: String, indices: Set<Int>) -> String {
+    /// Emit the static frame: top border with titles, left/right borders for each content row,
+    /// middle separator above the status bar, status bar with prompt + query, bottom border.
+    /// Content cells are left empty — `render(_:)` overlays them.
+    static func drawBoxFrame(
+        rows: Int,
+        cols: Int,
+        splitCol: Int?,           // nil = 1-pane, otherwise the col index of the vertical splitter
+        filesTitle: String,
+        previewTitle: String?,    // nil = 1-pane
+        query: String
+    ) -> String {
+        var buf = ""
+        // swiftlint:disable:next identifier_name
+        let h = Terminal.box.h
+
+        // --- Row 1: top border with titles ---
+        buf += Terminal.ansi.moveCursor(row: 1, col: 1)
+        if let splitCol, let previewTitle {
+            // 2-pane. teeDown lands at col splitCol, so the left title segment covers
+            // cols 2..splitCol-1 = splitCol - 2 glyphs; the right covers splitCol+1..cols-1.
+            let leftInner = splitCol - 2
+            let rightInner = cols - splitCol - 1
+            buf += Terminal.box.tl + topTitleSegment(title: filesTitle, innerWidth: leftInner)
+            buf += Terminal.box.teeDown + topTitleSegment(title: previewTitle, innerWidth: rightInner)
+            buf += Terminal.box.tr
+        } else {
+            // 1-pane
+            buf += Terminal.box.tl + topTitleSegment(title: filesTitle, innerWidth: cols - 2)
+            buf += Terminal.box.tr
+        }
+
+        // --- Rows 2 .. rows-3: content body (borders + splitter only) ---
+        for row in 2...(rows - 3) {
+            buf += Terminal.ansi.moveCursor(row: row, col: 1)
+            buf += Terminal.box.v
+            if let splitCol {
+                buf += String(repeating: " ", count: splitCol - 2)
+                buf += Terminal.box.v
+                buf += String(repeating: " ", count: cols - splitCol - 1)
+            } else {
+                buf += String(repeating: " ", count: cols - 2)
+            }
+            buf += Terminal.box.v
+        }
+
+        // --- Row rows-2: middle separator ---
+        buf += Terminal.ansi.moveCursor(row: rows - 2, col: 1)
+        if let splitCol {
+            // ├─…─┴─…─┤
+            buf += Terminal.box.teeRight
+            buf += String(repeating: h, count: splitCol - 2)
+            buf += Terminal.box.teeUp
+            buf += String(repeating: h, count: cols - splitCol - 1)
+            buf += Terminal.box.teeLeft
+        } else {
+            // ├─…─┤
+            buf += Terminal.box.teeRight
+            buf += String(repeating: h, count: cols - 2)
+            buf += Terminal.box.teeLeft
+        }
+
+        // --- Row rows-1: status bar ---
+        // Layout: "│" + " " + "❯ <query>" + padding + "│"  (total width = cols)
+        // If the query outgrows the remaining space, keep the tail so the latest keystrokes stay visible.
+        buf += Terminal.ansi.moveCursor(row: rows - 1, col: 1)
+        let maxQueryLen = max(0, cols - 5) // cols - "│ ❯ " (4) - trailing "│" (1)
+        let shownQuery = query.count > maxQueryLen
+            ? String(query.suffix(maxQueryLen))
+            : query
+        let status = "❯ \(shownQuery)"
+        let padTarget = max(0, cols - 3 - status.count)
+        buf += Terminal.box.v + " " + status + String(repeating: " ", count: padTarget)
+        buf += Terminal.box.v
+
+        // --- Row rows: bottom border ---
+        buf += Terminal.ansi.moveCursor(row: rows, col: 1)
+        buf += Terminal.box.bl + String(repeating: h, count: cols - 2) + Terminal.box.br
+
+        return buf
+    }
+
+    /// "─ TITLE ────…─" padded with horizontal-dash to exactly `innerWidth` glyphs.
+    /// If "─ TITLE " is already longer than `innerWidth`, truncate from the right so the frame stays flush.
+    /// Used between ┌/┬ and ┬/┐ corners.
+    private static func topTitleSegment(title: String, innerWidth: Int) -> String {
+        // swiftlint:disable:next identifier_name
+        let h = Terminal.box.h
+        let full = "\(h) \(title) "
+        if full.count >= innerWidth {
+            return String(full.prefix(innerWidth))
+        }
+        return full + String(repeating: h, count: innerWidth - full.count)
+    }
+
+    static func highlight(path: String, indices: Set<Int>) -> String {
         guard !indices.isEmpty else { return path }
         var out = ""
         for (idx, char) in path.enumerated() {
             if indices.contains(idx) {
-                out += Terminal.ansi.underlineOn + String(char) + Terminal.ansi.reset
+                out += Terminal.ansi.underlineOn + String(char) + Terminal.ansi.underlineOff
             } else {
                 out += String(char)
             }
@@ -279,7 +388,7 @@ enum TUIController {
         return String(text.prefix(max(0, width)))
     }
 
-    private static func previewLines(for url: URL, maxLines: Int) -> [String] {
+    static func previewLines(for url: URL, maxLines: Int) -> [String] {
         if let cached = previewCache[url] {
             previewCacheOrder.removeAll { $0 == url }
             previewCacheOrder.append(url)
@@ -291,7 +400,13 @@ enum TUIController {
         defer { try? handle.close() }
         let maxBytes = maxLines * 256
         let data = (try? handle.read(upToCount: maxBytes)) ?? Data()
+        guard !data.isEmpty else { return ["(preview unavailable)"] }
         guard let str = String(data: data, encoding: .utf8) else {
+            return ["(preview unavailable)"]
+        }
+        // 공백/개행만 있는 파일도 "빈 파일"로 취급한다.
+        // `echo "" > foo.md` 같이 1바이트(`\n`)만 있는 흔한 케이스를 잡기 위함.
+        guard !str.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return ["(preview unavailable)"]
         }
         let split = str.split(separator: "\n", omittingEmptySubsequences: false)
