@@ -13,9 +13,30 @@ enum Terminal {
         static let reset = "\u{1B}[0m"
         static let inverseOn = "\u{1B}[7m"
         static let underlineOn = "\u{1B}[4m"
+        static let underlineOff = "\u{1B}[24m"
         static func moveCursor(row: Int, col: Int) -> String {
             "\u{1B}[\(row);\(col)H"
         }
+    }
+
+    // swiftlint:disable:next type_name
+    enum box {
+        // swiftlint:disable:next identifier_name
+        static let h        = "─"
+        // swiftlint:disable:next identifier_name
+        static let v        = "│"
+        // swiftlint:disable:next identifier_name
+        static let tl       = "┌"
+        // swiftlint:disable:next identifier_name
+        static let tr       = "┐"
+        // swiftlint:disable:next identifier_name
+        static let bl       = "└"
+        // swiftlint:disable:next identifier_name
+        static let br       = "┘"
+        static let teeDown  = "┬"
+        static let teeUp    = "┴"
+        static let teeLeft  = "┤"
+        static let teeRight = "├"
     }
 
     private static var originalTermios: termios?
