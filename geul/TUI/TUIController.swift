@@ -404,6 +404,11 @@ enum TUIController {
         guard let str = String(data: data, encoding: .utf8) else {
             return ["(preview unavailable)"]
         }
+        // 공백/개행만 있는 파일도 "빈 파일"로 취급한다.
+        // `echo "" > foo.md` 같이 1바이트(`\n`)만 있는 흔한 케이스를 잡기 위함.
+        guard !str.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return ["(preview unavailable)"]
+        }
         let split = str.split(separator: "\n", omittingEmptySubsequences: false)
         let lines = split.prefix(maxLines).map(String.init)
         previewCache[url] = lines
