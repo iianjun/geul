@@ -147,4 +147,35 @@ final class TUIControllerRenderTests: XCTestCase {
         let lines = TUIController.previewLines(for: tmp, maxLines: 5)
         XCTAssertEqual(lines, ["(preview unavailable)"])
     }
+
+    func testPreviewLinesReturnsUnavailableForWhitespaceOnlyFile() throws {
+        // `echo "" > empty.md` 는 1바이트(`\n`) 파일을 만든다. 사용자 기대는 "빈 파일" 취급.
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("geul-test-\(UUID().uuidString).md")
+        try Data("\n".utf8).write(to: tmp)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let lines = TUIController.previewLines(for: tmp, maxLines: 5)
+        XCTAssertEqual(lines, ["(preview unavailable)"])
+    }
+
+    func testPreviewLinesReturnsUnavailableForSpacesAndNewlinesOnly() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("geul-test-\(UUID().uuidString).md")
+        try Data("   \n\t\n  \n".utf8).write(to: tmp)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let lines = TUIController.previewLines(for: tmp, maxLines: 5)
+        XCTAssertEqual(lines, ["(preview unavailable)"])
+    }
+
+    func testPreviewLinesReturnsContentForNonEmptyFile() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("geul-test-\(UUID().uuidString).md")
+        try Data("# Hello\n".utf8).write(to: tmp)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let lines = TUIController.previewLines(for: tmp, maxLines: 5)
+        XCTAssertEqual(lines.first, "# Hello")
+    }
 }
