@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var receivedOpenURLs = false
     private let launchedFromCLIWrapper: Bool
     private var menubar: MenubarController?
+    private let onboarding = OnboardingWindow()
 
     override init() {
         self.launchedFromCLIWrapper = CommandLine.arguments.contains(Self.cliLaunchMarker)
@@ -122,6 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         HotkeyRegistrar.shared.wireIfEnabled()
         let roots = SettingsStore.shared.indexRootsURLs
         FileIndex.shared.bootstrap(roots: roots)
+        onboarding.showIfNeeded()
     }
 
     private func scheduleCLIWrapperFallbackTermination() {
