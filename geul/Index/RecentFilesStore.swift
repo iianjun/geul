@@ -13,26 +13,34 @@ final class RecentFilesStore: ObservableObject {
 
     private let configDir: URL
     private let recentURL: URL
-    private let capacity: Int
+    private let overrideCapacity: Int?
     private var persistWork: DispatchWorkItem?
 
     init(
         configDir: URL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".config/geul"),
-        capacity: Int = 10
+        capacity: Int? = nil
     ) {
         self.configDir = configDir
         self.recentURL = configDir.appendingPathComponent("recent.json")
-        self.capacity = capacity
+        self.overrideCapacity = capacity
         self.items = Self.loadPruned(url: recentURL)
+    }
+
+    /// Effective capacity. Tests may inject a fixed value via the initializer;
+    /// production reads it dynamically from SettingsStore so changes in the
+    /// General tab take effect on the next bump without restart.
+    private var effectiveCapacity: Int {
+        overrideCapacity ?? SettingsStore.shared.settings.recentFilesCount
     }
 
     func bump(_ url: URL) {
         let path = url.standardizedFileURL.path
         var updated = items.filter { $0.path != path }
         updated.insert(RecentEntry(path: path, openedAt: Date()), at: 0)
-        if updated.count > capacity {
-            updated = Array(updated.prefix(capacity))
+        let cap = effectiveCapacity
+        if updated.count > cap {
+            updated = Array(updated.prefix(cap))
         }
         items = updated
         schedulePersist()
