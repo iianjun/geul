@@ -45,6 +45,8 @@
 		A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60122 /* PopupWindow.swift */; };
 		A1B2C3D4E5F60223 /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123 /* PopupView.swift */; };
 		A1B2C3D4E5F60224 /* HotkeyRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */; };
+		A1B2C3D4E5F60240 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60140 /* OnboardingView.swift */; };
+		A1B2C3D4E5F60241 /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60141 /* OnboardingWindow.swift */; };
 		A1B2C3D4E5F69030 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F69020 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
@@ -88,6 +90,8 @@
 		A1B2C3D4E5F60122 /* PopupWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupWindow.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60123 /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRegistrar.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60140 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60141 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +136,7 @@
 				A1B2C3D4E5F60100 /* Settings */,
 				A1B2C3D4E5F60110 /* Index */,
 				A1B2C3D4E5F60120 /* Menubar */,
+				A1B2C3D4E5F60160 /* Onboarding */,
 				B7F3A1D2E4C6089B00000017 /* Resources */,
 				B7F3A1D2E4C6089B00000012 /* Assets.xcassets */,
 			);
@@ -175,6 +180,16 @@
 			);
 			name = Menubar;
 			path = Menubar;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60160 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60140 /* OnboardingView.swift */,
+				A1B2C3D4E5F60141 /* OnboardingWindow.swift */,
+			);
+			name = Onboarding;
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		B7F3A1D2E4C6089B00000090 /* TUI */ = {
@@ -311,6 +326,8 @@
 				A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */,
 				A1B2C3D4E5F60223 /* PopupView.swift in Sources */,
 				A1B2C3D4E5F60224 /* HotkeyRegistrar.swift in Sources */,
+				A1B2C3D4E5F60240 /* OnboardingView.swift in Sources */,
+				A1B2C3D4E5F60241 /* OnboardingWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
