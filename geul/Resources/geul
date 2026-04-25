@@ -29,5 +29,5 @@ fi
 if [[ $# -eq 0 ]]; then
     exec "$app_macos"
 else
-    open -a "geul" "$@"
+    open -a "geul" "$@" --args --geul-opened-by-cli
 fi

@@ -36,6 +36,9 @@
 		A1B2C3D4E5F60204 /* HomeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60104 /* HomeScanner.swift */; };
 		A1B2C3D4E5F60205 /* HomeWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60105 /* HomeWatcher.swift */; };
 		A1B2C3D4E5F60206 /* FileIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60106 /* FileIndex.swift */; };
+		A1B2C3D4E5F60221 /* MenubarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60121 /* MenubarController.swift */; };
+		A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60122 /* PopupWindow.swift */; };
+		A1B2C3D4E5F60223 /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123 /* PopupView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +72,9 @@
 		A1B2C3D4E5F60104 /* HomeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScanner.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60105 /* HomeWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWatcher.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60106 /* FileIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileIndex.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60121 /* MenubarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarController.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60122 /* PopupWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupWindow.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60123 /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +117,7 @@
 				B7F3A1D2E4C6089B00000090 /* TUI */,
 				A1B2C3D4E5F60100 /* Settings */,
 				A1B2C3D4E5F60110 /* Index */,
+				A1B2C3D4E5F60120 /* Menubar */,
 				B7F3A1D2E4C6089B00000017 /* Resources */,
 				B7F3A1D2E4C6089B00000012 /* Assets.xcassets */,
 			);
@@ -137,6 +144,17 @@
 			);
 			name = Index;
 			path = Index;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60120 /* Menubar */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60121 /* MenubarController.swift */,
+				A1B2C3D4E5F60122 /* PopupWindow.swift */,
+				A1B2C3D4E5F60123 /* PopupView.swift */,
+			);
+			name = Menubar;
+			path = Menubar;
 			sourceTree = "<group>";
 		};
 		B7F3A1D2E4C6089B00000090 /* TUI */ = {
@@ -258,6 +276,9 @@
 				A1B2C3D4E5F60204 /* HomeScanner.swift in Sources */,
 				A1B2C3D4E5F60205 /* HomeWatcher.swift in Sources */,
 				A1B2C3D4E5F60206 /* FileIndex.swift in Sources */,
+				A1B2C3D4E5F60221 /* MenubarController.swift in Sources */,
+				A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */,
+				A1B2C3D4E5F60223 /* PopupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
