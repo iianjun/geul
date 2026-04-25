@@ -39,6 +39,8 @@
 		A1B2C3D4E5F60221 /* MenubarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60121 /* MenubarController.swift */; };
 		A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60122 /* PopupWindow.swift */; };
 		A1B2C3D4E5F60223 /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123 /* PopupView.swift */; };
+		A1B2C3D4E5F60224 /* HotkeyRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */; };
+		A1B2C3D4E5F69030 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F69020 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +77,7 @@
 		A1B2C3D4E5F60121 /* MenubarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarController.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60122 /* PopupWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupWindow.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60123 /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRegistrar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +85,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D4E5F69030 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,6 +156,7 @@
 				A1B2C3D4E5F60121 /* MenubarController.swift */,
 				A1B2C3D4E5F60122 /* PopupWindow.swift */,
 				A1B2C3D4E5F60123 /* PopupView.swift */,
+				A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */,
 			);
 			name = Menubar;
 			path = Menubar;
@@ -195,6 +200,9 @@
 			dependencies = (
 			);
 			name = geul;
+			packageProductDependencies = (
+				A1B2C3D4E5F69020 /* KeyboardShortcuts */,
+			);
 			productName = geul;
 			productReference = B7F3A1D2E4C6089B00000013 /* geul.app */;
 			productType = "com.apple.product-type.application";
@@ -223,6 +231,9 @@
 				Base,
 			);
 			mainGroup = B7F3A1D2E4C6089B00000002;
+			packageReferences = (
+				A1B2C3D4E5F69010 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			productRefGroup = B7F3A1D2E4C6089B00000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -279,6 +290,7 @@
 				A1B2C3D4E5F60221 /* MenubarController.swift in Sources */,
 				A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */,
 				A1B2C3D4E5F60223 /* PopupView.swift in Sources */,
+				A1B2C3D4E5F60224 /* HotkeyRegistrar.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -475,6 +487,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A1B2C3D4E5F69010 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1B2C3D4E5F69020 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D4E5F69010 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B7F3A1D2E4C6089B00000001 /* Project object */;
 }

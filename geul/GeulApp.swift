@@ -119,6 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let controller = MenubarController()
         controller.install()
         menubar = controller
+        HotkeyRegistrar.shared.wireIfEnabled()
         let roots = SettingsStore.shared.indexRootsURLs
         FileIndex.shared.bootstrap(roots: roots)
     }
