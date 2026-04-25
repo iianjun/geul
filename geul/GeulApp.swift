@@ -10,11 +10,27 @@ struct GeulApp: App {
     }
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    private var windows: [NSWindow] = []
+    private static let cliLaunchMarker = "--geul-opened-by-cli"
+
+    private(set) static weak var shared: AppDelegate?
+
+    private(set) var windows: [NSWindow] = []
+    private(set) var isAgentMode = false
+    private var pendingAgentEntry: DispatchWorkItem?
+    private var receivedOpenURLs = false
+    private let launchedFromCLIWrapper: Bool
+    private var menubar: MenubarController?
+
+    override init() {
+        self.launchedFromCLIWrapper = CommandLine.arguments.contains(Self.cliLaunchMarker)
+        super.init()
+        AppDelegate.shared = self
+    }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        true
+        !isAgentMode
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -22,15 +38,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        // Apple Events(open:)가 didFinishLaunching 전에 호출됨
-        // 파일 없이 실행된 경우 usage 창 표시
-        DispatchQueue.main.async { [self] in
-            if windows.isEmpty {
-                openWindow(for: nil)
-            }
+        if launchedFromCLIWrapper {
+            scheduleCLIWrapperFallbackTermination()
+            return
         }
+
+        // LaunchServices may deliver open-file Apple Events around launch time.
+        // Defer Agent-mode entry briefly and cancel it if `application(_:open:)`
+        // receives URLs. This preserves lightweight CLI/Finder-open behavior
+        // instead of accidentally installing the resident agent.
+        let work = DispatchWorkItem { [weak self] in
+            guard let self,
+                  self.windows.isEmpty,
+                  !self.receivedOpenURLs else { return }
+            self.enterAgentMode()
+        }
+        pendingAgentEntry = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        RecentFilesStore.shared.flush()
+    }
+
+    func applicationShouldHandleReopen(
+        _ sender: NSApplication, hasVisibleWindows flag: Bool
+    ) -> Bool {
+        if isAgentMode && !flag {
+            MenubarController.shared?.showPopup()
+            return false
+        }
+        return true
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -39,12 +77,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
+        receivedOpenURLs = true
+        pendingAgentEntry?.cancel()
+        pendingAgentEntry = nil
         for url in urls {
             openWindow(for: url)
         }
     }
 
-    private func openWindow(for fileURL: URL?) {
+    func openWindow(for fileURL: URL?) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -59,7 +100,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.title = fileURL?.lastPathComponent ?? "geul"
         window.delegate = self
         window.center()
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         windows.append(window)
+
+        if let fileURL {
+            RecentFilesStore.shared.bump(fileURL)
+        }
+    }
+
+    // MARK: - Agent mode
+
+    private func enterAgentMode() {
+        guard !isAgentMode else { return }
+        pendingAgentEntry?.cancel()
+        pendingAgentEntry = nil
+        isAgentMode = true
+        let controller = MenubarController()
+        controller.install()
+        menubar = controller
+        let roots = SettingsStore.shared.indexRootsURLs
+        FileIndex.shared.bootstrap(roots: roots)
+    }
+
+    private func scheduleCLIWrapperFallbackTermination() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self,
+                  !self.isAgentMode,
+                  self.windows.isEmpty,
+                  !self.receivedOpenURLs else { return }
+            NSApp.terminate(nil)
+        }
     }
 }
