@@ -88,7 +88,13 @@ struct PopupView: View {
     private func moveSelection(_ delta: Int) {
         guard hasItems else { return }
         let count = itemCount
-        selection = (selection + delta + count) % count
+        // Clamp at boundaries (native list behavior). Holding the key on
+        // the last row should *stop* there rather than wrap around to the
+        // top, which felt like the scroll was "losing" the focus.
+        let newSelection = max(0, min(count - 1, selection + delta))
+        if newSelection != selection {
+            selection = newSelection
+        }
     }
 
     private func updateSearch(query: String) {
@@ -168,7 +174,7 @@ private struct RecentList: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 0) {
+                    VStack(spacing: 0) {
                         ForEach(Array(items.enumerated()), id: \.offset) { idx, entry in
                             let url = URL(fileURLWithPath: entry.path)
                             ResultRow(
@@ -184,10 +190,12 @@ private struct RecentList: View {
                     .padding(.vertical, 4)
                 }
                 .onChange(of: selection) { _, newValue in
-                    // ScrollViewReader.scrollTo applies an implicit
-                    // animation by default — explicit nil disables it so
-                    // the highlight + scroll snap instantly per keypress.
-                    withAnimation(nil) {
+                    // disablesAnimations is more aggressive than
+                    // withAnimation(nil) — it forbids any implicit
+                    // animation context from re-enabling animations.
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
                         proxy.scrollTo(newValue)
                     }
                 }
@@ -224,7 +232,7 @@ private struct ResultList: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 0) {
+                    VStack(spacing: 0) {
                         ForEach(Array(items.enumerated()), id: \.offset) { idx, file in
                             ResultRow(
                                 title: file.name,
@@ -239,10 +247,12 @@ private struct ResultList: View {
                     .padding(.vertical, 4)
                 }
                 .onChange(of: selection) { _, newValue in
-                    // ScrollViewReader.scrollTo applies an implicit
-                    // animation by default — explicit nil disables it so
-                    // the highlight + scroll snap instantly per keypress.
-                    withAnimation(nil) {
+                    // disablesAnimations is more aggressive than
+                    // withAnimation(nil) — it forbids any implicit
+                    // animation context from re-enabling animations.
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
                         proxy.scrollTo(newValue)
                     }
                 }
