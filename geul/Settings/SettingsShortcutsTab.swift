@@ -19,6 +19,9 @@ struct SettingsShortcutsTab: View {
             KeyboardShortcuts.Recorder("Open popup:", name: .openPopup)
                 .disabled(!store.settings.hotkey.enabled)
 
+            Text("⌘ / ⌥ / ⌃ 중 하나는 포함해야 해요 (Shift만으로는 등록되지 않아요).")
+                .font(.caption).foregroundStyle(.secondary)
+
             Text("핫키를 꺼도 메뉴바 또는 Dock 아이콘 클릭으로 팝업을 열 수 있어요.")
                 .font(.caption).foregroundStyle(.secondary)
 
