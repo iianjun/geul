@@ -169,9 +169,9 @@ private struct RecentList: View {
                     .padding(.vertical, 4)
                 }
                 .onChange(of: selection) { _, newValue in
-                    withAnimation(.linear(duration: 0.08)) {
-                        proxy.scrollTo(newValue, anchor: .center)
-                    }
+                    // No animation — match native List/Spotlight where the
+                    // highlight + scroll snap instantly to the new row.
+                    proxy.scrollTo(newValue)
                 }
             }
         }
@@ -221,9 +221,9 @@ private struct ResultList: View {
                     .padding(.vertical, 4)
                 }
                 .onChange(of: selection) { _, newValue in
-                    withAnimation(.linear(duration: 0.08)) {
-                        proxy.scrollTo(newValue, anchor: .center)
-                    }
+                    // No animation — match native List/Spotlight where the
+                    // highlight + scroll snap instantly to the new row.
+                    proxy.scrollTo(newValue)
                 }
             }
         }
