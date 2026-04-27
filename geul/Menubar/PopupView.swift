@@ -168,37 +168,41 @@ private struct RecentList: View {
     let selection: Int
     var onSelect: (String) -> Void
 
+    @State private var scrollTargetID: Int?
+
     var body: some View {
         if items.isEmpty {
             placeholder
         } else {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(Array(items.enumerated()), id: \.offset) { idx, entry in
-                            let url = URL(fileURLWithPath: entry.path)
-                            ResultRow(
-                                title: url.lastPathComponent,
-                                subtitle: entry.path,
-                                isSelected: idx == selection
-                            )
-                            .id(idx)
-                            .contentShape(Rectangle())
-                            .onTapGesture { onSelect(entry.path) }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-                .onChange(of: selection) { _, newValue in
-                    // disablesAnimations is more aggressive than
-                    // withAnimation(nil) — it forbids any implicit
-                    // animation context from re-enabling animations.
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        proxy.scrollTo(newValue)
+            // .scrollPosition(id:anchor:) is a state-binding scroll API.
+            // It avoids the .onChange + ScrollViewReader.scrollTo path,
+            // which SwiftUI batches per render frame — under held arrow
+            // keys the scroll lagged several rows behind the highlight
+            // and then snapped to catch up. anchor: .center keeps the
+            // selected row centered, which means every keypress scrolls
+            // (no "is it already visible?" ambiguity that left the list
+            // stuck for the first few presses).
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { idx, entry in
+                        let url = URL(fileURLWithPath: entry.path)
+                        ResultRow(
+                            title: url.lastPathComponent,
+                            subtitle: entry.path,
+                            isSelected: idx == selection
+                        )
+                        .id(idx)
+                        .contentShape(Rectangle())
+                        .onTapGesture { onSelect(entry.path) }
                     }
                 }
+                .padding(.vertical, 4)
+                .scrollTargetLayout()
+            }
+            .scrollPosition(id: $scrollTargetID, anchor: .center)
+            .onAppear { scrollTargetID = selection }
+            .onChange(of: selection) { _, newValue in
+                scrollTargetID = newValue
             }
         }
     }
@@ -221,6 +225,8 @@ private struct ResultList: View {
     let selection: Int
     var onSelect: (URL) -> Void
 
+    @State private var scrollTargetID: Int?
+
     var body: some View {
         if items.isEmpty {
             VStack {
@@ -230,32 +236,30 @@ private struct ResultList: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(Array(items.enumerated()), id: \.offset) { idx, file in
-                            ResultRow(
-                                title: file.name,
-                                subtitle: file.url.path,
-                                isSelected: idx == selection
-                            )
-                            .id(idx)
-                            .contentShape(Rectangle())
-                            .onTapGesture { onSelect(file.url) }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-                .onChange(of: selection) { _, newValue in
-                    // disablesAnimations is more aggressive than
-                    // withAnimation(nil) — it forbids any implicit
-                    // animation context from re-enabling animations.
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        proxy.scrollTo(newValue)
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { idx, file in
+                        ResultRow(
+                            title: file.name,
+                            subtitle: file.url.path,
+                            isSelected: idx == selection
+                        )
+                        .id(idx)
+                        .contentShape(Rectangle())
+                        .onTapGesture { onSelect(file.url) }
                     }
                 }
+                .padding(.vertical, 4)
+                .scrollTargetLayout()
+            }
+            .scrollPosition(id: $scrollTargetID, anchor: .center)
+            .onAppear { scrollTargetID = selection }
+            .onChange(of: selection) { _, newValue in
+                scrollTargetID = newValue
+            }
+            .onChange(of: items.count) { _, _ in
+                // New search results — reset scroll to top of new list.
+                scrollTargetID = 0
             }
         }
     }
