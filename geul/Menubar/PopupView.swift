@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct PopupView: View {
@@ -6,6 +7,7 @@ struct PopupView: View {
     @ObservedObject private var themeStore: ThemeStore = .shared
     @State private var query: String = ""
     @State private var selection: Int = 0
+    @State private var keyMonitor: Any?
     @FocusState private var searchFocused: Bool
 
     var onSelect: (URL) -> Void
@@ -13,7 +15,7 @@ struct PopupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SearchField(text: $query, onSubmit: submit, focused: $searchFocused)
+            SearchField(text: $query, focused: $searchFocused)
                 .padding(12)
                 .background(Color(nsColor: .controlBackgroundColor))
 
@@ -39,11 +41,11 @@ struct PopupView: View {
         .onChange(of: query) { _, _ in selection = 0 }
         .onAppear {
             DispatchQueue.main.async { searchFocused = true }
+            installKeyMonitor()
         }
-        .onKeyPress(.upArrow) { moveSelection(-1) }
-        .onKeyPress(.downArrow) { moveSelection(1) }
-        .onKeyPress(.escape) { onDismiss(); return .handled }
-        .onKeyPress(.return) { submit(); return .handled }
+        .onDisappear {
+            removeKeyMonitor()
+        }
     }
 
     @ViewBuilder
@@ -71,11 +73,10 @@ struct PopupView: View {
         query.isEmpty ? !recents.items.isEmpty : !index.search(query, limit: 50).isEmpty
     }
 
-    private func moveSelection(_ delta: Int) -> KeyPress.Result {
-        guard hasItems else { return .handled }
+    private func moveSelection(_ delta: Int) {
+        guard hasItems else { return }
         let count = itemCount
         selection = (selection + delta + count) % count
-        return .handled
     }
 
     private func submit() {
@@ -90,11 +91,43 @@ struct PopupView: View {
             }
         }
     }
+
+    /// SwiftUI's TextField captures up/down arrows and Enter when focused.
+    /// A local NSEvent monitor lets us catch the navigation/submit/dismiss
+    /// keys at the app level before the field consumes them, then return
+    /// nil to swallow. Other keys pass through unchanged.
+    private func installKeyMonitor() {
+        guard keyMonitor == nil else { return }
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            switch event.keyCode {
+            case 126: // up arrow
+                moveSelection(-1)
+                return nil
+            case 125: // down arrow
+                moveSelection(1)
+                return nil
+            case 36, 76: // return / numpad enter
+                submit()
+                return nil
+            case 53: // escape
+                onDismiss()
+                return nil
+            default:
+                return event
+            }
+        }
+    }
+
+    private func removeKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
+    }
 }
 
 private struct SearchField: View {
     @Binding var text: String
-    var onSubmit: () -> Void
     var focused: FocusState<Bool>.Binding
 
     var body: some View {
@@ -105,7 +138,6 @@ private struct SearchField: View {
                 .textFieldStyle(.plain)
                 .font(.title3)
                 .focused(focused)
-                .onSubmit(onSubmit)
         }
     }
 }
@@ -119,19 +151,29 @@ private struct RecentList: View {
         if items.isEmpty {
             placeholder
         } else {
-            List {
-                ForEach(Array(items.enumerated()), id: \.offset) { idx, entry in
-                    let url = URL(fileURLWithPath: entry.path)
-                    row(
-                        title: url.lastPathComponent,
-                        subtitle: entry.path,
-                        isSelected: idx == selection
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture { onSelect(entry.path) }
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { idx, entry in
+                            let url = URL(fileURLWithPath: entry.path)
+                            ResultRow(
+                                title: url.lastPathComponent,
+                                subtitle: entry.path,
+                                isSelected: idx == selection
+                            )
+                            .id(idx)
+                            .contentShape(Rectangle())
+                            .onTapGesture { onSelect(entry.path) }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .onChange(of: selection) { _, newValue in
+                    withAnimation(.linear(duration: 0.08)) {
+                        proxy.scrollTo(newValue, anchor: .center)
+                    }
                 }
             }
-            .listStyle(.plain)
         }
     }
 
@@ -145,21 +187,6 @@ private struct RecentList: View {
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func row(title: String, subtitle: String, isSelected: Bool) -> some View {
-        HStack {
-            Image(systemName: "doc.text")
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.body)
-                Text(subtitle).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .padding(.vertical, 4)
-        .listRowBackground(
-            isSelected ? Color.accentColor.opacity(0.2) : Color.clear
-        )
     }
 }
 
@@ -177,27 +204,54 @@ private struct ResultList: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            List {
-                ForEach(Array(items.enumerated()), id: \.offset) { idx, file in
-                    HStack {
-                        Image(systemName: "doc.text")
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(file.name).font(.body)
-                            Text(file.url.path)
-                                .font(.caption).foregroundStyle(.secondary)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { idx, file in
+                            ResultRow(
+                                title: file.name,
+                                subtitle: file.url.path,
+                                isSelected: idx == selection
+                            )
+                            .id(idx)
+                            .contentShape(Rectangle())
+                            .onTapGesture { onSelect(file.url) }
                         }
-                        Spacer()
                     }
                     .padding(.vertical, 4)
-                    .listRowBackground(
-                        idx == selection ? Color.accentColor.opacity(0.2) : Color.clear
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture { onSelect(file.url) }
+                }
+                .onChange(of: selection) { _, newValue in
+                    withAnimation(.linear(duration: 0.08)) {
+                        proxy.scrollTo(newValue, anchor: .center)
+                    }
                 }
             }
-            .listStyle(.plain)
         }
+    }
+}
+
+private struct ResultRow: View {
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack {
+            Image(systemName: "doc.text")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.body)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.85) : .secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(isSelected ? Color.accentColor : Color.clear)
+        .foregroundStyle(isSelected ? Color.white : Color.primary)
     }
 }
 
