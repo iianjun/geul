@@ -30,10 +30,17 @@ final class OnboardingWindow {
                 self?.close()
             },
             onSetShortcut: { [weak self] in
-                self?.close()
+                // Order: tab first → activate app → open Settings → close
+                // onboarding on the next runloop tick. Closing the active
+                // window before sendAction can leave AppKit without a key
+                // window during the transition.
                 SettingsNavigator.shared.request(.shortcuts)
+                NSApp.activate(ignoringOtherApps: true)
                 NSApp.sendAction(
                     Selector(("showSettingsWindow:")), to: nil, from: nil)
+                DispatchQueue.main.async { [weak self] in
+                    self?.close()
+                }
             }
         )
         let hosting = NSHostingView(rootView: view)
@@ -43,6 +50,14 @@ final class OnboardingWindow {
             backing: .buffered,
             defer: false
         )
+        // We own the lifecycle through `window`; let ARC release it instead
+        // of NSWindow's auto-release-on-close, which double-releases under
+        // CoreAnimation cleanup on macOS 26.
+        win.isReleasedWhenClosed = false
+        // Disable transform animation entirely — Set-shortcut path closes
+        // this window while opening Settings, and the overlapping animation
+        // dealloc was crashing in -[_NSWindowTransformAnimation dealloc].
+        win.animationBehavior = .none
         win.contentView = hosting
         win.title = "Welcome to geul"
         win.center()
@@ -59,7 +74,10 @@ final class OnboardingWindow {
     }
 
     private func close() {
-        window?.close()
+        // orderOut bypasses the close cycle (no will-close notifications,
+        // no transform animation). With isReleasedWhenClosed = false set
+        // in showIfNeeded, ARC handles lifetime once we drop the ref.
+        window?.orderOut(nil)
         window = nil
     }
 }
