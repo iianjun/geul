@@ -8,6 +8,11 @@ struct PopupView: View {
     @State private var query: String = ""
     @State private var selection: Int = 0
     @State private var keyMonitor: Any?
+    /// Memoized fuzzy search results — recomputing on every body render
+    /// (3× per arrow keypress: resultsSection + itemCount + hasItems) was
+    /// scanning the entire index per keypress, dropping frames when a
+    /// repeating arrow was held.
+    @State private var searchResults: [IndexedFile] = []
     @FocusState private var searchFocused: Bool
 
     var onSelect: (URL) -> Void
@@ -38,8 +43,15 @@ struct PopupView: View {
         }
         .frame(width: 640, height: 400)
         .background(Color(nsColor: .windowBackgroundColor))
-        .onChange(of: query) { _, _ in selection = 0 }
+        .onChange(of: query) { _, newQuery in
+            updateSearch(query: newQuery)
+            selection = 0
+        }
+        .onChange(of: index.files.count) { _, _ in
+            updateSearch(query: query)
+        }
         .onAppear {
+            updateSearch(query: query)
             DispatchQueue.main.async { searchFocused = true }
             installKeyMonitor()
         }
@@ -58,7 +70,7 @@ struct PopupView: View {
             )
         } else {
             ResultList(
-                items: index.search(query, limit: 50),
+                items: searchResults,
                 selection: selection,
                 onSelect: { onSelect($0) }
             )
@@ -66,11 +78,11 @@ struct PopupView: View {
     }
 
     private var itemCount: Int {
-        query.isEmpty ? recents.items.count : index.search(query, limit: 50).count
+        query.isEmpty ? recents.items.count : searchResults.count
     }
 
     private var hasItems: Bool {
-        query.isEmpty ? !recents.items.isEmpty : !index.search(query, limit: 50).isEmpty
+        query.isEmpty ? !recents.items.isEmpty : !searchResults.isEmpty
     }
 
     private func moveSelection(_ delta: Int) {
@@ -79,14 +91,17 @@ struct PopupView: View {
         selection = (selection + delta + count) % count
     }
 
+    private func updateSearch(query: String) {
+        searchResults = query.isEmpty ? [] : index.search(query, limit: 50)
+    }
+
     private func submit() {
         if query.isEmpty {
             if let entry = recents.items[safe: selection] {
                 onSelect(URL(fileURLWithPath: entry.path))
             }
         } else {
-            let results = index.search(query, limit: 50)
-            if let file = results[safe: selection] {
+            if let file = searchResults[safe: selection] {
                 onSelect(file.url)
             }
         }
