@@ -112,12 +112,36 @@ final class MenubarController {
     }
 
     @objc private func openSettings() {
-        if #available(macOS 14, *) {
-            NSApp.sendAction(
-                Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(
-                Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        // Activate so the SwiftUI Settings scene actually surfaces; without
+        // this, sendAction can succeed but the window stays behind other apps.
+        NSApp.activate(ignoringOtherApps: true)
+        // Defer one runloop tick so this fires after the dropdown menu has
+        // fully dismissed. Sending while the menu is mid-tear-down leaves the
+        // responder chain in a state where neither showSettingsWindow:
+        // nor showPreferencesWindow: lands.
+        DispatchQueue.main.async {
+            if #available(macOS 14, *) {
+                if NSApp.sendAction(
+                    Selector(("showSettingsWindow:")), to: nil, from: nil) {
+                    return
+                }
+            }
+            if NSApp.sendAction(
+                Selector(("showPreferencesWindow:")), to: nil, from: nil) {
+                return
+            }
+            // Last resort: invoke the auto-generated app-menu Settings item
+            // directly. That's the same item ⌘, fires.
+            Self.invokeAppMenuSettingsItem()
+        }
+    }
+
+    private static func invokeAppMenuSettingsItem() {
+        guard let appMenu = NSApp.mainMenu?.item(at: 0)?.submenu else { return }
+        for item in appMenu.items where item.keyEquivalent == "," {
+            guard let action = item.action else { return }
+            NSApp.sendAction(action, to: item.target, from: item)
+            return
         }
     }
 
