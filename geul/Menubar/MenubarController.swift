@@ -112,14 +112,29 @@ final class MenubarController {
     }
 
     @objc private func openSettings() {
-        // Activate so the SwiftUI Settings scene actually surfaces; without
-        // this, sendAction can succeed but the window stays behind other apps.
         NSApp.activate(ignoringOtherApps: true)
-        // Defer one runloop tick so this fires after the dropdown menu has
-        // fully dismissed. Sending while the menu is mid-tear-down leaves the
-        // responder chain in a state where neither showSettingsWindow:
-        // nor showPreferencesWindow: lands.
+        // Defer to the next runloop tick so the dropdown finishes dismissing
+        // before we touch the menu / responder chain.
         DispatchQueue.main.async {
+            // Best path: synthesize a ⌘, key event and let the main menu
+            // dispatch it. This is the same path the user's literal ⌘,
+            // press takes, so it's the most reliable way to trigger the
+            // SwiftUI-generated Settings item programmatically.
+            if let event = NSEvent.keyEvent(
+                with: .keyDown,
+                location: .zero,
+                modifierFlags: .command,
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                characters: ",",
+                charactersIgnoringModifiers: ",",
+                isARepeat: false,
+                keyCode: 43
+            ), NSApp.mainMenu?.performKeyEquivalent(with: event) == true {
+                return
+            }
+            // Fallbacks if synthesis didn't take.
             if #available(macOS 14, *) {
                 if NSApp.sendAction(
                     Selector(("showSettingsWindow:")), to: nil, from: nil) {
@@ -130,8 +145,6 @@ final class MenubarController {
                 Selector(("showPreferencesWindow:")), to: nil, from: nil) {
                 return
             }
-            // Last resort: invoke the auto-generated app-menu Settings item
-            // directly. That's the same item ⌘, fires.
             Self.invokeAppMenuSettingsItem()
         }
     }
