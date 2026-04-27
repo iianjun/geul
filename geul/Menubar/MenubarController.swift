@@ -59,6 +59,9 @@ final class MenubarController {
         }
         guard let popup else { return }
         popup.restoreSavedPositionOrCenter()
+        // .nonactivatingPanel: panel itself doesn't activate the app.
+        // Without this, the popup can stay below the active app's windows.
+        NSApp.activate(ignoringOtherApps: true)
         popup.orderFrontRegardless()
         popup.makeKey()
     }

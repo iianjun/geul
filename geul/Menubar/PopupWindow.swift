@@ -6,10 +6,14 @@ final class PopupWindow: NSPanel {
     init(contentView: NSView) {
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 640, height: 400),
-            styleMask: [.hudWindow, .nonactivatingPanel, .titled, .closable],
+            styleMask: [.titled, .closable, .resizable, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
+        // ARC manages lifetime via MenubarController.popup; opt out of
+        // NSWindow's auto-release-on-close.
+        self.isReleasedWhenClosed = false
+        self.animationBehavior = .none
         self.contentView = contentView
         self.isFloatingPanel = true
         self.level = .floating
