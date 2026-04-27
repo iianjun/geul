@@ -18,6 +18,12 @@ enum IgnoreList {
         ".idea", ".vscode",
         // Git worktrees
         ".worktrees",
+        // macOS protected user folders. Filtering by name skips the
+        // recursive descent from $HOME — no TCC prompt on first launch.
+        // If a user explicitly adds e.g. ~/Pictures as an index root,
+        // contentsOfDirectory(at: ~/Pictures) at the root level still
+        // fires the prompt as an intentional consent step.
+        "Music", "Pictures", "Movies", "Library",
     ]
 
     static func parseGitignore(_ content: String) -> [String] {

@@ -61,6 +61,27 @@ final class HomeScannerTests: XCTestCase {
         XCTAssertFalse(names.contains("HEAD-note.md"))
     }
 
+    func testSkipsMacOSProtectedFolders() async throws {
+        _ = try writeFile("notes.md")
+        _ = try writeFile("Music/track-notes.md")
+        _ = try writeFile("Pictures/photo-notes.md")
+        _ = try writeFile("Movies/clip-notes.md")
+        _ = try writeFile("Library/lib-notes.md")
+
+        let scanner = HomeScanner()
+        let results = try await scanner.scan(roots: [tempDir])
+        let names = Set(results.map { $0.name })
+        XCTAssertTrue(names.contains("notes.md"))
+        XCTAssertFalse(names.contains("track-notes.md"),
+            "Music/ children should be skipped to avoid TCC prompt")
+        XCTAssertFalse(names.contains("photo-notes.md"),
+            "Pictures/ children should be skipped to avoid TCC prompt")
+        XCTAssertFalse(names.contains("clip-notes.md"),
+            "Movies/ children should be skipped to avoid TCC prompt")
+        XCTAssertFalse(names.contains("lib-notes.md"),
+            "Library/ children should be skipped")
+    }
+
     func testNonexistentRootReturnsEmpty() async throws {
         let bogus = URL(fileURLWithPath: "/nonexistent-geul-\(UUID().uuidString)")
         let scanner = HomeScanner()
