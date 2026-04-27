@@ -169,9 +169,12 @@ private struct RecentList: View {
                     .padding(.vertical, 4)
                 }
                 .onChange(of: selection) { _, newValue in
-                    // No animation — match native List/Spotlight where the
-                    // highlight + scroll snap instantly to the new row.
-                    proxy.scrollTo(newValue)
+                    // ScrollViewReader.scrollTo applies an implicit
+                    // animation by default — explicit nil disables it so
+                    // the highlight + scroll snap instantly per keypress.
+                    withAnimation(nil) {
+                        proxy.scrollTo(newValue)
+                    }
                 }
             }
         }
@@ -221,9 +224,12 @@ private struct ResultList: View {
                     .padding(.vertical, 4)
                 }
                 .onChange(of: selection) { _, newValue in
-                    // No animation — match native List/Spotlight where the
-                    // highlight + scroll snap instantly to the new row.
-                    proxy.scrollTo(newValue)
+                    // ScrollViewReader.scrollTo applies an implicit
+                    // animation by default — explicit nil disables it so
+                    // the highlight + scroll snap instantly per keypress.
+                    withAnimation(nil) {
+                        proxy.scrollTo(newValue)
+                    }
                 }
             }
         }

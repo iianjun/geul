@@ -38,6 +38,17 @@ final class MenubarController {
     }
 
     func showPopup() {
+        // Recreate popup window from scratch each time. Replacing only
+        // contentView left the old NSHostingView's PopupView in a state
+        // where SwiftUI's onDisappear didn't always fire — leaking the
+        // NSEvent local monitor and registering a new one on top of it.
+        // Multiple monitors meant each arrow key fired moveSelection
+        // several times, producing the "selection skips / lags" feel.
+        if let existing = popup {
+            existing.orderOut(nil)
+            self.popup = nil
+        }
+
         let view = PopupView(
             onSelect: { [weak self] url in
                 guard let self else { return }
@@ -52,18 +63,14 @@ final class MenubarController {
         let hosting = NSHostingView(rootView: view)
         hosting.frame = NSRect(x: 0, y: 0, width: 640, height: 400)
 
-        if let existing = popup {
-            existing.contentView = hosting
-        } else {
-            popup = PopupWindow(contentView: hosting)
-        }
-        guard let popup else { return }
-        popup.restoreSavedPositionOrCenter()
+        let newPopup = PopupWindow(contentView: hosting)
+        popup = newPopup
+        newPopup.restoreSavedPositionOrCenter()
         // .nonactivatingPanel: panel itself doesn't activate the app.
         // Without this, the popup can stay below the active app's windows.
         NSApp.activate(ignoringOtherApps: true)
-        popup.orderFrontRegardless()
-        popup.makeKey()
+        newPopup.orderFrontRegardless()
+        newPopup.makeKey()
     }
 
     func hidePopup() {
