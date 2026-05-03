@@ -43,5 +43,8 @@ Secrets.xcconfig
 # Claude Code local settings
 .claude/settings.local.json
 
+# Agent local settings
+.agents/
+
 # Docs (specs & plans)
 docs/
