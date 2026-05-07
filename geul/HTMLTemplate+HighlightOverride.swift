@@ -17,6 +17,10 @@ extension HTMLTemplate {
         color: #82D2CE;
     }
 
+    .hljs-meta .hljs-keyword {
+        color: #82D2CE;
+    }
+
     .hljs-title,
     .hljs-function,
     .hljs-params,
@@ -25,9 +29,18 @@ extension HTMLTemplate {
         color: #efb080;
     }
 
+    .hljs-title.function_,
+    .hljs-title.class_ {
+        color: #efb080;
+    }
+
     .hljs-string,
     .hljs-meta-string,
     .hljs-template-variable {
+        color: #e394dc;
+    }
+
+    .hljs-meta .hljs-string {
         color: #e394dc;
     }
 
@@ -41,6 +54,10 @@ extension HTMLTemplate {
     .hljs-attr,
     .hljs-variable,
     .hljs-property {
+        color: #AAA0FA;
+    }
+
+    .hljs-variable.language_ {
         color: #AAA0FA;
     }
 
