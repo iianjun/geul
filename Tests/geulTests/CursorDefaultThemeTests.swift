@@ -38,6 +38,16 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertFalse(css.contains("letter-spacing: -0.015em;"))
     }
 
+    func testHighlightOverrideUsesCursorTokenColors() {
+        let css = HTMLTemplate.highlightOverrideCSS
+
+        XCTAssertTrue(css.contains("color: #82D2CE;"))
+        XCTAssertTrue(css.contains("color: #efb080;"))
+        XCTAssertTrue(css.contains("color: #e394dc;"))
+        XCTAssertTrue(css.contains("color: #AAA0FA;"))
+        XCTAssertTrue(css.contains("color: #E4E4E45E;"))
+    }
+
     private static let cursorDarkColors: [String: String] = [
         "--bg-primary": "#181818",
         "--bg-secondary": "#2B2B2B",
