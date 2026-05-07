@@ -245,7 +245,7 @@ enum TUIController {
                 let row = 2 + localRow
                 guard localRow < previewRows.count else { break }
                 buf += Terminal.ansi.moveCursor(row: row, col: previewSplit + 1)
-                buf += truncate(previewRows[localRow], to: previewWidth)
+                buf += truncateToTerminalWidth(previewRows[localRow], to: previewWidth)
             }
         }
 
@@ -384,9 +384,29 @@ enum TUIController {
         return out
     }
 
-    private static func truncate(_ text: String, to width: Int) -> String {
-        guard text.count > width else { return text }
-        return String(text.prefix(max(0, width)))
+    private static let terminalWidthLocale: Void = {
+        _ = setlocale(LC_CTYPE, "")
+    }()
+
+    static func truncateToTerminalWidth(_ text: String, to width: Int) -> String {
+        guard width > 0 else { return "" }
+        _ = terminalWidthLocale
+
+        var usedWidth = 0
+        var output = ""
+        for character in text {
+            let characterWidth = terminalWidth(of: character)
+            guard usedWidth + characterWidth <= width else { break }
+            output.append(character)
+            usedWidth += characterWidth
+        }
+        return output
+    }
+
+    private static func terminalWidth(of character: Character) -> Int {
+        String(character).unicodeScalars.reduce(0) { width, scalar in
+            width + max(0, Int(wcwidth(wchar_t(scalar.value))))
+        }
     }
 
     static func previewLines(for url: URL, maxLines: Int) -> [String] {
