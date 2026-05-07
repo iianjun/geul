@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -72,5 +73,13 @@ struct ContentView: View {
             isLoading = false
             errorMessage = "Failed to read file: \(error.localizedDescription)"
         }
+    }
+}
+
+enum MarkdownClipboard {
+    @discardableResult
+    static func copy(_ markdown: String, pasteboard: NSPasteboard = .general) -> Bool {
+        pasteboard.clearContents()
+        return pasteboard.setString(markdown, forType: .string)
     }
 }
