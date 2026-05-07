@@ -147,6 +147,12 @@ extension HTMLTemplate {
             hljs.textContent = window.__geulHljsCSS[hljsKey] || window.__geulHljsCSS.default;
         }
 
+        var hljsOverride = document.getElementById('geul-hljs-override');
+        if (hljsOverride) {
+            var overrides = window.__geulHljsOverrideCSS || {};
+            hljsOverride.textContent = overrides[hljsKey] || overrides.default || '';
+        }
+
         var content = document.getElementById('content');
         if (content) {
             var containers = content.querySelectorAll('.mermaid-container');
