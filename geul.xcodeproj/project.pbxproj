@@ -23,6 +23,7 @@
 		B7F3A1D2E4C6089B00000081 /* HTMLTemplate+Loading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000071 /* HTMLTemplate+Loading.swift */; };
 		B7F3A1D2E4C6089B00000082 /* HTMLTemplate+HighlightOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000072 /* HTMLTemplate+HighlightOverride.swift */; };
 		B7F3A1D2E4C6089B00000083 /* HTMLTemplate+MermaidInit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */; };
+		B7F3A1D2E4C6089B000000A1 /* FindState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B000000A0 /* FindState.swift */; };
 		B7F3A1D2E4C6089B00000092 /* IgnoreList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000091 /* IgnoreList.swift */; };
 		B7F3A1D2E4C6089B00000094 /* FileScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000093 /* FileScanner.swift */; };
 		B7F3A1D2E4C6089B00000096 /* FuzzyMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3A1D2E4C6089B00000095 /* FuzzyMatcher.swift */; };
@@ -50,6 +51,7 @@
 		B7F3A1D2E4C6089B00000071 /* HTMLTemplate+Loading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+Loading.swift"; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000072 /* HTMLTemplate+HighlightOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+HighlightOverride.swift"; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTMLTemplate+MermaidInit.swift"; sourceTree = "<group>"; };
+		B7F3A1D2E4C6089B000000A0 /* FindState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindState.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000091 /* IgnoreList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IgnoreList.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000093 /* FileScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileScanner.swift; sourceTree = "<group>"; };
 		B7F3A1D2E4C6089B00000095 /* FuzzyMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuzzyMatcher.swift; sourceTree = "<group>"; };
@@ -92,6 +94,7 @@
 				B7F3A1D2E4C6089B00000073 /* HTMLTemplate+MermaidInit.swift */,
 				B7F3A1D2E4C6089B00000016 /* MarkdownWebView.swift */,
 				B7F3A1D2E4C6089B00000018 /* FileWatcher.swift */,
+				B7F3A1D2E4C6089B000000A0 /* FindState.swift */,
 				B7F3A1D2E4C6089B00000019 /* Theme.swift */,
 				B7F3A1D2E4C6089B0000001A /* ThemeStore.swift */,
 				B7F3A1D2E4C6089B0000001B /* SettingsView.swift */,
@@ -205,6 +208,7 @@
 				B7F3A1D2E4C6089B00000083 /* HTMLTemplate+MermaidInit.swift in Sources */,
 				B7F3A1D2E4C6089B00000026 /* MarkdownWebView.swift in Sources */,
 				B7F3A1D2E4C6089B00000027 /* FileWatcher.swift in Sources */,
+				B7F3A1D2E4C6089B000000A1 /* FindState.swift in Sources */,
 				B7F3A1D2E4C6089B00000029 /* Theme.swift in Sources */,
 				B7F3A1D2E4C6089B0000002A /* ThemeStore.swift in Sources */,
 				B7F3A1D2E4C6089B0000002B /* SettingsView.swift in Sources */,
