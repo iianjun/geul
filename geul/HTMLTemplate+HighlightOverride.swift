@@ -21,6 +21,12 @@ extension HTMLTemplate {
         color: #82D2CE;
     }
 
+    .hljs-doctag,
+    .hljs-template-tag,
+    .hljs-selector-pseudo {
+        color: #82D2CE;
+    }
+
     .hljs-title,
     .hljs-function,
     .hljs-params,
@@ -48,6 +54,10 @@ extension HTMLTemplate {
         color: #e394dc;
     }
 
+    .hljs-regexp {
+        color: #e394dc;
+    }
+
     .hljs-number,
     .hljs-symbol,
     .hljs-bullet,
@@ -62,6 +72,13 @@ extension HTMLTemplate {
     }
 
     .hljs-variable.language_ {
+        color: #AAA0FA;
+    }
+
+    .hljs-operator,
+    .hljs-selector-attr,
+    .hljs-selector-class,
+    .hljs-selector-id {
         color: #AAA0FA;
     }
 
@@ -94,6 +111,12 @@ extension HTMLTemplate {
     .hljs-strong {
         color: var(--text-primary);
         font-weight: bold;
+    }
+
+    .hljs-code,
+    .hljs-formula,
+    .hljs-subst {
+        color: var(--text-primary);
     }
     """
 }
