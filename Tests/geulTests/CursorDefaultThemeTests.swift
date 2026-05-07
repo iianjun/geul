@@ -72,6 +72,19 @@ final class CursorDefaultThemeTests: XCTestCase {
             color: #AAA0FA;
         }
         """))
+        XCTAssertTrue(css.contains("""
+        .hljs-emphasis {
+            color: var(--text-primary);
+            font-style: italic;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
+        .hljs-strong {
+            color: var(--text-primary);
+            font-weight: bold;
+        }
+        """))
+        XCTAssertFalse(css.contains("#c9d1d9"))
     }
 
     private static let cursorDarkColors: [String: String] = [
