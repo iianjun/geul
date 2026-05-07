@@ -25,6 +25,19 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertEqual(ThemeSanitizer.hljsVariantKey(for: theme), "dark")
     }
 
+    func testBaseCSSUsesCursorMarkdownPreviewRules() {
+        let css = HTMLTemplate.baseCSS
+
+        XCTAssertTrue(css.contains("font-size: 14px;"))
+        XCTAssertTrue(css.contains("line-height: 22px;"))
+        XCTAssertTrue(css.contains("padding: 0 26px 96px;"))
+        XCTAssertTrue(css.contains("border-left: 5px solid var(--text-tertiary);"))
+        XCTAssertTrue(css.contains("table > tbody > tr + tr > td"))
+        XCTAssertTrue(css.contains("padding: 5px 10px;"))
+        XCTAssertFalse(css.contains("border-left: 3px solid var(--bg-code-border);"))
+        XCTAssertFalse(css.contains("letter-spacing: -0.015em;"))
+    }
+
     private static let cursorDarkColors: [String: String] = [
         "--bg-primary": "#181818",
         "--bg-secondary": "#2B2B2B",
