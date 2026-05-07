@@ -4,220 +4,211 @@ extension HTMLTemplate {
 
     static let baseCSS = """
     :root {
-        --radius: 8px;
-        --radius-lg: 12px;
+        --radius: 3px;
+        --radius-lg: 3px;
     }
 
     * {
-        margin: 0;
-        padding: 0;
         box-sizing: border-box;
     }
 
-    html {
-        font-size: 16px;
+    html,
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC",
+                     "Segoe UI", system-ui, "Ubuntu", "Droid Sans",
+                     sans-serif;
+        font-size: 14px;
+        line-height: 22px;
+        color: var(--text-primary);
+        background-color: var(--bg-primary);
+        word-wrap: break-word;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        text-rendering: optimizeLegibility;
     }
 
     body {
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
-                     "Helvetica Neue", Arial, sans-serif;
-        line-height: 1.7;
-        color: var(--text-primary);
-        background-color: var(--bg-primary);
+        padding-top: 1em;
     }
 
     .markdown-body {
-        padding: 48px 32px 96px;
+        padding: 0 26px 96px;
     }
 
-    /* Headings */
+    h1, h2, h3, h4, h5, h6,
+    p, ol, ul, pre {
+        margin-top: 0;
+    }
+
     h1, h2, h3, h4, h5, h6 {
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                     "Helvetica Neue", Arial, sans-serif;
         color: var(--text-primary);
-        font-weight: 650;
+        font-weight: 600;
+        margin-top: 24px;
+        margin-bottom: 16px;
         line-height: 1.25;
-        letter-spacing: -0.015em;
+        letter-spacing: 0;
     }
 
     h1 {
         font-size: 2em;
-        font-weight: 700;
-        letter-spacing: -0.025em;
         margin-top: 0;
-        margin-bottom: 20px;
+        padding-bottom: 0.3em;
+        border-bottom: 1px solid var(--border);
     }
-
-    .markdown-body > h1:first-child { margin-top: 0; }
 
     h2 {
         font-size: 1.5em;
-        margin-top: 48px;
+        padding-bottom: 0.3em;
+        border-bottom: 1px solid var(--border);
+    }
+
+    h3 { font-size: 1.25em; }
+    h4 { font-size: 1em; }
+    h5 { font-size: 0.875em; }
+    h6 { font-size: 0.85em; color: var(--text-secondary); }
+
+    p {
         margin-bottom: 16px;
-        padding-top: 24px;
-        border-top: 1px solid var(--border);
     }
 
-    h3 {
-        font-size: 1.2em;
-        margin-top: 36px;
-        margin-bottom: 12px;
-    }
-
-    h4 {
-        font-size: 1em;
-        margin-top: 28px;
-        margin-bottom: 8px;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        font-weight: 600;
-    }
-
-    h5 {
-        font-size: 0.875em;
-        margin-top: 24px;
-        margin-bottom: 8px;
-        color: var(--text-secondary);
-    }
-
-    h6 {
-        font-size: 0.8em;
-        margin-top: 24px;
-        margin-bottom: 8px;
-        color: var(--text-tertiary);
-    }
-
-    /* Paragraph */
-    p { margin-bottom: 16px; }
-
-    /* Links */
     a {
         color: var(--accent);
         text-decoration: none;
-        border-bottom: 1px solid transparent;
-        transition: border-color 0.15s ease;
+        border-bottom: 0;
     }
-    a:hover { border-bottom-color: var(--accent); }
 
-    /* Inline code */
+    a:hover {
+        text-decoration: underline;
+    }
+
     code {
-        font-family: ui-monospace, "SF Mono", SFMono-Regular,
-                     Menlo, Consolas, monospace;
-        font-size: 0.875em;
+        font-family: var(--vscode-editor-font-family, "SF Mono", Monaco,
+                     Menlo, Consolas, "Ubuntu Mono", "Liberation Mono",
+                     "DejaVu Sans Mono", "Courier New", monospace);
+        font-size: 1em;
+        line-height: 1.357em;
         padding: 0.15em 0.4em;
-        background-color: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-radius: 5px;
         color: var(--text-primary);
+        background-color: var(--bg-secondary);
+        border-radius: var(--radius);
     }
 
-    /* Code block */
     pre {
-        margin-bottom: 20px;
-        padding: 20px 24px;
+        margin-bottom: 0.7em;
+        padding: 16px;
+        color: var(--text-primary);
         background-color: var(--bg-code);
-        border-left: 3px solid var(--bg-code-border);
+        border: 1px solid var(--bg-code-border);
         border-radius: var(--radius);
-        overflow-x: auto;
+        overflow: auto;
         box-shadow: var(--shadow-subtle);
     }
 
     pre code {
+        display: inline-block;
         padding: 0;
+        color: var(--text-primary);
         background: none;
         border: none;
         border-radius: 0;
-        font-size: 0.85em;
-        line-height: 1.6;
+        tab-size: 4;
     }
 
-    /* Blockquote */
     blockquote {
-        margin-bottom: 20px;
-        padding: 16px 20px;
-        background-color: var(--accent-soft);
-        border-left: 3px solid var(--accent);
-        border-radius: 0 var(--radius) var(--radius) 0;
-        color: var(--text-secondary);
+        margin: 0 0 0.7em;
+        padding: 0 16px 0 10px;
+        color: var(--text-tertiary);
+        background: transparent;
+        border-left: 5px solid var(--text-tertiary);
+        border-radius: 2px;
     }
-    blockquote p:last-child { margin-bottom: 0; }
 
-    /* Lists */
-    ul, ol {
-        margin-bottom: 16px;
-        padding-left: 1.75em;
+    blockquote p:last-child {
+        margin-bottom: 0;
     }
-    li { margin-bottom: 4px; }
-    li > p { margin-bottom: 6px; }
-    li::marker { color: var(--text-tertiary); }
 
-    /* Tables — minimal, no outer border */
+    ul,
+    ol {
+        margin-bottom: 0.7em;
+        padding-left: 2em;
+    }
+
+    li {
+        margin-bottom: 0;
+    }
+
+    li p {
+        margin-bottom: 0.7em;
+    }
+
     table {
-        width: 100%;
-        margin-bottom: 20px;
         border-collapse: collapse;
-        font-size: 0.9em;
+        margin-bottom: 0.7em;
+        font-size: 1em;
     }
 
-    thead th {
+    th {
         text-align: left;
-        padding: 10px 16px;
         font-weight: 600;
-        font-size: 0.8em;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--text-secondary);
-        border-bottom: 2px solid var(--border-strong);
+        border-bottom: 1px solid var(--border-strong);
     }
 
-    tbody td {
-        padding: 10px 16px;
-        border-bottom: 1px solid var(--border);
+    th,
+    td {
+        padding: 5px 10px;
     }
-    tbody tr:last-child td { border-bottom: none; }
 
-    /* Horizontal rule */
+    table > tbody > tr + tr > td {
+        border-top: 1px solid var(--border);
+    }
+
     hr {
-        margin: 40px 0;
-        border: none;
+        margin: 0 0 0.7em;
+        border: 0;
         height: 1px;
-        background: linear-gradient(
-            to right,
-            transparent,
-            var(--border-strong) 20%,
-            var(--border-strong) 80%,
-            transparent
-        );
+        border-bottom: 1px solid var(--border);
+        background: none;
     }
 
-    /* Images */
-    img {
+    img,
+    video {
         max-width: 100%;
+        max-height: 100%;
         height: auto;
         border-radius: var(--radius-lg);
-        margin: 8px 0 20px;
+        margin: 0 0 0.7em;
     }
 
-    /* Strikethrough */
-    del { color: var(--text-tertiary); }
+    sub,
+    sup {
+        line-height: 0;
+    }
 
-    /* Selection */
+    del {
+        color: var(--text-tertiary);
+    }
+
     ::selection {
-        background-color: var(--accent);
-        color: #ffffff;
+        background-color: rgba(228, 228, 228, 0.19);
+        color: var(--text-primary);
     }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb {
-        background: var(--border-strong);
-        border-radius: 3px;
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
     }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(228, 228, 228, 0.07);
+        border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(228, 228, 228, 0.12);
+    }
     """
 }
