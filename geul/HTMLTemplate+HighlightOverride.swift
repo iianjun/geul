@@ -87,10 +87,12 @@ extension HTMLTemplate {
     }
 
     .hljs-emphasis {
+        color: var(--text-primary);
         font-style: italic;
     }
 
     .hljs-strong {
+        color: var(--text-primary);
         font-weight: bold;
     }
     """
