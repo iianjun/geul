@@ -2,7 +2,7 @@ import Foundation
 
 extension HTMLTemplate {
 
-    static let highlightOverrideCSS = """
+    static let cursorDarkHighlightOverrideCSS = """
     pre code.hljs {
         padding: 0;
         background: transparent;
@@ -119,4 +119,12 @@ extension HTMLTemplate {
         color: var(--text-primary);
     }
     """
+
+    static func highlightOverrideCSS(forHLJSVariantKey key: String) -> String {
+        key == "dark" ? cursorDarkHighlightOverrideCSS : ""
+    }
+
+    static func highlightOverrideCSS(for theme: Theme) -> String {
+        highlightOverrideCSS(forHLJSVariantKey: ThemeSanitizer.hljsVariantKey(for: theme))
+    }
 }
