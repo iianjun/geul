@@ -68,8 +68,35 @@ final class CursorDefaultThemeTests: XCTestCase {
         }
         """))
         XCTAssertTrue(css.contains("""
+        .hljs-doctag,
+        .hljs-template-tag,
+        .hljs-selector-pseudo {
+            color: #82D2CE;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
         .hljs-variable.language_ {
             color: #AAA0FA;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
+        .hljs-operator,
+        .hljs-selector-attr,
+        .hljs-selector-class,
+        .hljs-selector-id {
+            color: #AAA0FA;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
+        .hljs-regexp {
+            color: #e394dc;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
+        .hljs-code,
+        .hljs-formula,
+        .hljs-subst {
+            color: var(--text-primary);
         }
         """))
         XCTAssertTrue(css.contains("""
