@@ -1,5 +1,25 @@
 import SwiftUI
 
+enum DockVisibilityPolicy {
+    static func launchActivationPolicy(
+        launchedFromCLIWrapper: Bool
+    ) -> NSApplication.ActivationPolicy {
+        launchedFromCLIWrapper ? .regular : .accessory
+    }
+
+    static var readerWindowOpenedPolicy: NSApplication.ActivationPolicy {
+        .regular
+    }
+
+    static func readerWindowsDidChangePolicy(
+        isAgentMode: Bool,
+        readerWindowCount: Int
+    ) -> NSApplication.ActivationPolicy? {
+        guard isAgentMode, readerWindowCount == 0 else { return nil }
+        return .accessory
+    }
+}
+
 struct GeulApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
@@ -35,7 +55,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
+        applyActivationPolicy(
+            DockVisibilityPolicy.launchActivationPolicy(
+                launchedFromCLIWrapper: launchedFromCLIWrapper
+            )
+        )
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -65,16 +89,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationShouldHandleReopen(
         _ sender: NSApplication, hasVisibleWindows flag: Bool
     ) -> Bool {
-        if isAgentMode && !flag {
-            MenubarController.shared?.showPopup()
-            return false
-        }
         return true
     }
 
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         windows.removeAll { $0 === window }
+        if let policy = DockVisibilityPolicy.readerWindowsDidChangePolicy(
+            isAgentMode: isAgentMode,
+            readerWindowCount: windows.count
+        ) {
+            applyActivationPolicy(policy)
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -87,6 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func openWindow(for fileURL: URL?) {
+        applyActivationPolicy(DockVisibilityPolicy.readerWindowOpenedPolicy)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -134,5 +161,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                   !self.receivedOpenURLs else { return }
             NSApp.terminate(nil)
         }
+    }
+
+    private func applyActivationPolicy(
+        _ policy: NSApplication.ActivationPolicy
+    ) {
+        NSApp.setActivationPolicy(policy)
     }
 }
