@@ -92,9 +92,10 @@ enum TUIController {
     private static var previewCacheOrder: [URL] = []
 
     /// Entry point. Exit code: 0 = selected & launched, 130 = cancelled, 1 = launch failed.
-    static func runMain() -> Int32 {
-        let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        let entries = FileScanner.scan(cwd)
+    static func runMain(
+        root: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    ) -> Int32 {
+        let entries = FileScanner.scan(root.standardizedFileURL)
 
         Terminal.enterRawMode()
         Terminal.enterAltScreen()
