@@ -5,22 +5,28 @@ struct MarkdownWebView: NSViewRepresentable {
     let html: String
     let fileURL: URL?
     let theme: Theme
+    let findRequest: FindRequest
+    let onFindResult: (FindResult) -> Void
     let onMarkdownReload: (String) -> Void
 
     init(
         html: String,
         fileURL: URL?,
         theme: Theme,
+        findRequest: FindRequest = .initial,
+        onFindResult: @escaping (FindResult) -> Void = { _ in },
         onMarkdownReload: @escaping (String) -> Void = { _ in }
     ) {
         self.html = html
         self.fileURL = fileURL
         self.theme = theme
+        self.findRequest = findRequest
+        self.onFindResult = onFindResult
         self.onMarkdownReload = onMarkdownReload
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(onFindResult: onFindResult, onMarkdownReload: onMarkdownReload)
     }
 
     func makeNSView(context: Context) -> WKWebView {
@@ -33,13 +39,14 @@ struct MarkdownWebView: NSViewRepresentable {
 
         context.coordinator.lastHTML = html
         context.coordinator.fileURL = fileURL
-        context.coordinator.onMarkdownReload = onMarkdownReload
         context.coordinator.lastAppliedTheme = theme
+        context.coordinator.queueFindRequestIfNeeded(findRequest)
         webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
         return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
+        context.coordinator.onFindResult = onFindResult
         context.coordinator.onMarkdownReload = onMarkdownReload
 
         if html != context.coordinator.lastHTML {
@@ -47,6 +54,7 @@ struct MarkdownWebView: NSViewRepresentable {
             // theme, so update the applied baseline in lockstep.
             context.coordinator.lastHTML = html
             context.coordinator.lastAppliedTheme = theme
+            context.coordinator.queueFindRequestIfNeeded(findRequest)
             webView.alphaValue = 0
             webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
             return
@@ -56,6 +64,8 @@ struct MarkdownWebView: NSViewRepresentable {
             context.coordinator.lastAppliedTheme = theme
             context.coordinator.applyTheme(theme)
         }
+
+        context.coordinator.handleFindRequest(findRequest, in: webView)
     }
 
     // MARK: - Coordinator
@@ -66,10 +76,21 @@ struct MarkdownWebView: NSViewRepresentable {
         var fileWatcher: FileWatcher?
         weak var webView: WKWebView?
         var lastAppliedTheme: Theme?
-        var onMarkdownReload: (String) -> Void = { _ in }
+        var onFindResult: (FindResult) -> Void
+        var onMarkdownReload: (String) -> Void
+        var lastAppliedFindRequestID = FindRequest.initial.id
         // A theme change that arrived before the first navigation finished.
         // Drained in didFinish so the fresh WebView picks it up.
         private var pendingThemeApply: Theme?
+        private var pendingFindRequests = PendingFindRequestQueue()
+
+        init(
+            onFindResult: @escaping (FindResult) -> Void,
+            onMarkdownReload: @escaping (String) -> Void
+        ) {
+            self.onFindResult = onFindResult
+            self.onMarkdownReload = onMarkdownReload
+        }
 
         // swiftlint:disable:next implicitly_unwrapped_optional
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -87,6 +108,8 @@ struct MarkdownWebView: NSViewRepresentable {
                 pendingThemeApply = nil
                 applyTheme(pending)
             }
+
+            drainPendingFindRequest(in: webView)
         }
 
         func webView(
@@ -122,12 +145,19 @@ struct MarkdownWebView: NSViewRepresentable {
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 guard let markdown = try? String(contentsOf: url, encoding: .utf8) else { return }
                 let body = MarkdownRenderer.render(markdown)
-                guard let encoded = Self.jsStringEncode(body) else { return }
                 DispatchQueue.main.async { [weak self] in
                     guard let self else { return }
                     onMarkdownReload(markdown)
-                    webView?.evaluateJavaScript("updateContent(\(encoded))") { _, error in
-                        if let error {
+                    webView?.callAsyncJavaScript(
+                        "return await updateContent(html);",
+                        arguments: ["html": body],
+                        in: nil,
+                        in: .page
+                    ) { result in
+                        switch result {
+                        case .success(let value):
+                            self.publishFindResult(from: value)
+                        case .failure(let error):
                             print("[geul] updateContent error: \(error)")
                         }
                     }
@@ -166,12 +196,126 @@ struct MarkdownWebView: NSViewRepresentable {
             }
         }
 
+        // MARK: - Find Bridge
+
+        func queueFindRequestIfNeeded(_ request: FindRequest) {
+            pendingFindRequests.enqueue(
+                request,
+                lastAppliedRequestID: lastAppliedFindRequestID
+            )
+        }
+
+        func handleFindRequest(_ request: FindRequest, in webView: WKWebView) {
+            guard request.id > lastAppliedFindRequestID else { return }
+
+            if request.action == .none {
+                lastAppliedFindRequestID = request.id
+                return
+            }
+
+            guard !webView.isLoading else {
+                queueFindRequestIfNeeded(request)
+                return
+            }
+
+            applyFindRequest(request, in: webView)
+        }
+
+        private func drainPendingFindRequest(in webView: WKWebView) {
+            for request in pendingFindRequests.drain() where request.id > lastAppliedFindRequestID {
+                applyFindRequest(request, in: webView)
+            }
+        }
+
+        private func applyFindRequest(_ request: FindRequest, in webView: WKWebView) {
+            guard let script = Self.findScript(for: request.action) else {
+                lastAppliedFindRequestID = request.id
+                return
+            }
+
+            lastAppliedFindRequestID = request.id
+            webView.evaluateJavaScript(script) { [weak self] result, error in
+                if let error {
+                    print("[geul] find command error: \(error)")
+                }
+                self?.publishFindResult(from: result)
+            }
+        }
+
+        private func publishFindResult(from value: Any?) {
+            guard let result = Self.findResult(from: value) else { return }
+            publishFindResult(result)
+        }
+
+        private func publishFindResult(_ result: FindResult) {
+            DispatchQueue.main.async { [onFindResult] in
+                onFindResult(result)
+            }
+        }
+
         private static func jsStringEncode(_ string: String) -> String? {
             guard let data = try? JSONSerialization.data(
                 withJSONObject: string,
                 options: .fragmentsAllowed
             ) else { return nil }
             return String(data: data, encoding: .utf8)
+        }
+
+        private static func findScript(for action: FindAction) -> String? {
+            let fallback = "({ query: '', currentIndex: -1, total: 0 })"
+
+            switch action {
+            case .none:
+                return nil
+            case .search(let query):
+                guard let encoded = jsStringEncode(query) else { return fallback }
+                return """
+                (window.geulFind ? window.geulFind.search(\(encoded)) : \(fallback))
+                """
+            case .next:
+                return """
+                (window.geulFind ? window.geulFind.next() : \(fallback))
+                """
+            case .previous:
+                return """
+                (window.geulFind ? window.geulFind.previous() : \(fallback))
+                """
+            case .clear:
+                return """
+                (window.geulFind ? window.geulFind.clear() : \(fallback))
+                """
+            }
+        }
+
+        private static func findResult(from value: Any?) -> FindResult? {
+            guard let value, !(value is NSNull) else { return nil }
+
+            let dictionary: [String: Any]
+            if let swiftDictionary = value as? [String: Any] {
+                dictionary = swiftDictionary
+            } else if let nsDictionary = value as? NSDictionary {
+                dictionary = nsDictionary as? [String: Any] ?? [:]
+            } else {
+                return nil
+            }
+
+            return FindResult(
+                query: dictionary["query"] as? String ?? "",
+                currentIndex: intValue(from: dictionary["currentIndex"]) ?? -1,
+                total: intValue(from: dictionary["total"]) ?? 0
+            )
+        }
+
+        private static func intValue(from value: Any?) -> Int? {
+            if let int = value as? Int {
+                return int
+            }
+
+            if let number = value as? NSNumber {
+                return number.intValue
+            }
+
+            return nil
         }
 
         deinit {
