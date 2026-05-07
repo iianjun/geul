@@ -110,16 +110,28 @@ extension HTMLTemplate {
         });
     }
 
-    function updateContent(html) {
+    async function updateContent(html) {
+        var activeFindQuery = window.geulFind ? window.geulFind.currentQuery() : '';
         var container = document.getElementById('content');
-        if (!container) return;
+        if (!container) return null;
+
+        if (window.geulFind) {
+            window.geulFind.clear();
+        }
+
         container.innerHTML = html;
         try {
-            renderMermaidDiagrams(container);
+            await renderMermaidDiagrams(container);
         } catch(e) {
             console.error('[geul] Mermaid render failed:', e);
         }
         renderMath(container);
+
+        if (activeFindQuery && window.geulFind) {
+            return window.geulFind.search(activeFindQuery);
+        }
+
+        return null;
     }
 
     function setTheme(colors, hljsKey) {

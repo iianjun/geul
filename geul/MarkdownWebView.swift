@@ -107,7 +107,12 @@ struct MarkdownWebView: NSViewRepresentable {
                 let body = MarkdownRenderer.render(markdown)
                 guard let encoded = Self.jsStringEncode(body) else { return }
                 DispatchQueue.main.async {
-                    self?.webView?.evaluateJavaScript("updateContent(\(encoded))") { _, error in
+                    let script = """
+                    (async function() {
+                        return await updateContent(\(encoded));
+                    })()
+                    """
+                    self?.webView?.evaluateJavaScript(script) { _, error in
                         if let error {
                             print("[geul] updateContent error: \(error)")
                         }
