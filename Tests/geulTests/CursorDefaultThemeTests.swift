@@ -53,6 +53,11 @@ final class CursorDefaultThemeTests: XCTestCase {
         }
         """))
         XCTAssertTrue(css.contains("""
+        .hljs-title.class_.inherited__ {
+            color: #efb080;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
         .hljs-meta .hljs-string {
             color: #e394dc;
         }
