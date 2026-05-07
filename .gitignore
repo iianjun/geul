@@ -45,6 +45,9 @@ Secrets.xcconfig
 
 # Agent local settings
 .agents/
+.claude/
+.codex
+
 
 # Docs (specs & plans)
 docs/
