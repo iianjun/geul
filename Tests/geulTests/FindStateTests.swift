@@ -37,4 +37,29 @@ final class FindStateTests: XCTestCase {
         XCTAssertEqual(result.displayText, "2 of 3")
         XCTAssertTrue(result.hasMatches)
     }
+
+    func testPendingFindRequestQueuePreservesSearchBeforeNavigation() {
+        var queue = PendingFindRequestQueue()
+        let search = FindRequest(id: 1, action: .search("reader"))
+        let next = FindRequest(id: 2, action: .next)
+
+        queue.enqueue(search, lastAppliedRequestID: 0)
+        queue.enqueue(next, lastAppliedRequestID: 0)
+
+        XCTAssertEqual(queue.drain(), [search, next])
+    }
+
+    func testPendingFindRequestQueueIgnoresNoneAppliedAndDuplicateRequests() {
+        var queue = PendingFindRequestQueue()
+        let applied = FindRequest(id: 1, action: .search("old"))
+        let search = FindRequest(id: 2, action: .search("reader"))
+
+        queue.enqueue(.initial, lastAppliedRequestID: 0)
+        queue.enqueue(applied, lastAppliedRequestID: 1)
+        queue.enqueue(search, lastAppliedRequestID: 1)
+        queue.enqueue(search, lastAppliedRequestID: 1)
+
+        XCTAssertEqual(queue.drain(), [search])
+        XCTAssertEqual(queue.drain(), [])
+    }
 }
