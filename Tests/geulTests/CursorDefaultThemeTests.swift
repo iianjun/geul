@@ -46,6 +46,27 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertTrue(css.contains("color: #e394dc;"))
         XCTAssertTrue(css.contains("color: #AAA0FA;"))
         XCTAssertTrue(css.contains("color: #E4E4E45E;"))
+        XCTAssertTrue(css.contains("""
+        .hljs-title.function_,
+        .hljs-title.class_ {
+            color: #efb080;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
+        .hljs-meta .hljs-string {
+            color: #e394dc;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
+        .hljs-meta .hljs-keyword {
+            color: #82D2CE;
+        }
+        """))
+        XCTAssertTrue(css.contains("""
+        .hljs-variable.language_ {
+            color: #AAA0FA;
+        }
+        """))
     }
 
     private static let cursorDarkColors: [String: String] = [
