@@ -22,7 +22,8 @@ extension HTMLTemplate {
         var state = {
             query: '',
             marks: [],
-            index: -1
+            index: -1,
+            version: 0
         };
 
         function contentRoot() {
@@ -160,6 +161,7 @@ extension HTMLTemplate {
         function search(query) {
             removeMarks();
             state.query = query || '';
+            state.version += 1;
 
             if (state.query.length === 0) {
                 return result();
@@ -179,6 +181,31 @@ extension HTMLTemplate {
             return activate(0);
         }
 
+        function prepareForContentUpdate() {
+            var snapshot = {
+                query: state.query,
+                version: state.version
+            };
+            removeMarks();
+            return snapshot;
+        }
+
+        function restoreAfterContentUpdate(snapshot) {
+            if (!snapshot) {
+                return result();
+            }
+
+            var query = state.version === snapshot.version
+                ? snapshot.query
+                : state.query;
+
+            if (query) {
+                return search(query);
+            }
+
+            return result();
+        }
+
         window.geulFind = {
             search: search,
             next: function() {
@@ -189,11 +216,17 @@ extension HTMLTemplate {
             },
             clear: function() {
                 state.query = '';
+                state.version += 1;
                 removeMarks();
                 return result();
             },
             currentQuery: function() {
                 return state.query;
+            },
+            prepareForContentUpdate: prepareForContentUpdate,
+            restoreAfterContentUpdate: restoreAfterContentUpdate,
+            currentVersion: function() {
+                return state.version;
             }
         };
     })();

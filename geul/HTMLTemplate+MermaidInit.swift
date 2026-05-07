@@ -111,13 +111,11 @@ extension HTMLTemplate {
     }
 
     async function updateContent(html) {
-        var activeFindQuery = window.geulFind ? window.geulFind.currentQuery() : '';
+        var findSnapshot = window.geulFind
+            ? window.geulFind.prepareForContentUpdate()
+            : null;
         var container = document.getElementById('content');
         if (!container) return null;
-
-        if (window.geulFind) {
-            window.geulFind.clear();
-        }
 
         container.innerHTML = html;
         try {
@@ -127,8 +125,8 @@ extension HTMLTemplate {
         }
         renderMath(container);
 
-        if (activeFindQuery && window.geulFind) {
-            return window.geulFind.search(activeFindQuery);
+        if (window.geulFind) {
+            return window.geulFind.restoreAfterContentUpdate(findSnapshot);
         }
 
         return null;

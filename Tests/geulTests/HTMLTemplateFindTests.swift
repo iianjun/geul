@@ -34,8 +34,9 @@ final class HTMLTemplateFindTests: XCTestCase {
     }
 
     func testUpdateContentPreservesActiveFindQuery() {
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("activeFindQuery"))
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("window.geulFind.search(activeFindQuery)"))
+        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("findSnapshot"))
+        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("prepareForContentUpdate()"))
+        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("restoreAfterContentUpdate(findSnapshot)"))
     }
 
     func testUpdateContentAwaitsMermaidBeforeRestoringFindQuery() {
@@ -62,8 +63,14 @@ final class HTMLTemplateFindTests: XCTestCase {
     func testLiveReloadAwaitsAsyncUpdateContentFromSwift() throws {
         let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
 
-        XCTAssertTrue(source.contains("(async function()"))
-        XCTAssertTrue(source.contains("return await updateContent("))
+        XCTAssertTrue(source.contains("callAsyncJavaScript("))
+        XCTAssertTrue(source.contains("return await updateContent(html);"))
+    }
+
+    func testFindScriptVersionsQueriesAroundAsyncLiveReload() {
+        XCTAssertTrue(HTMLTemplate.findScript.contains("version: 0"))
+        XCTAssertTrue(HTMLTemplate.findScript.contains("state.version += 1"))
+        XCTAssertTrue(HTMLTemplate.findScript.contains("state.version === snapshot.version"))
     }
 
     private static func markdownWebViewSourceURL() -> URL {
