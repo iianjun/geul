@@ -110,16 +110,26 @@ extension HTMLTemplate {
         });
     }
 
-    function updateContent(html) {
+    async function updateContent(html) {
+        var findSnapshot = window.geulFind
+            ? window.geulFind.prepareForContentUpdate()
+            : null;
         var container = document.getElementById('content');
-        if (!container) return;
+        if (!container) return null;
+
         container.innerHTML = html;
         try {
-            renderMermaidDiagrams(container);
+            await renderMermaidDiagrams(container);
         } catch(e) {
             console.error('[geul] Mermaid render failed:', e);
         }
         renderMath(container);
+
+        if (window.geulFind) {
+            return window.geulFind.restoreAfterContentUpdate(findSnapshot);
+        }
+
+        return null;
     }
 
     function setTheme(colors, hljsKey) {
