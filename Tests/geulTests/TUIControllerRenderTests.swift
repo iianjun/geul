@@ -178,4 +178,20 @@ final class TUIControllerRenderTests: XCTestCase {
         let lines = TUIController.previewLines(for: tmp, maxLines: 5)
         XCTAssertEqual(lines.first, "# Hello")
     }
+
+    func testTruncateToTerminalWidthCountsWideCharactersAsTwoColumns() {
+        let text = "abcd한글ef"
+
+        let clipped = TUIController.truncateToTerminalWidth(text, to: 7)
+
+        XCTAssertEqual(clipped, "abcd한")
+    }
+
+    func testTruncateToTerminalWidthKeepsCharacterWhenItExactlyFits() {
+        let text = "한글abc"
+
+        let clipped = TUIController.truncateToTerminalWidth(text, to: 5)
+
+        XCTAssertEqual(clipped, "한글a")
+    }
 }
