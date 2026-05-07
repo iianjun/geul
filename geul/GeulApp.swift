@@ -1,5 +1,25 @@
 import SwiftUI
 
+enum DockVisibilityPolicy {
+    static func launchActivationPolicy(
+        launchedFromCLIWrapper: Bool
+    ) -> NSApplication.ActivationPolicy {
+        launchedFromCLIWrapper ? .regular : .accessory
+    }
+
+    static var readerWindowOpenedPolicy: NSApplication.ActivationPolicy {
+        .regular
+    }
+
+    static func readerWindowsDidChangePolicy(
+        isAgentMode: Bool,
+        readerWindowCount: Int
+    ) -> NSApplication.ActivationPolicy? {
+        guard isAgentMode, readerWindowCount == 0 else { return nil }
+        return .accessory
+    }
+}
+
 struct GeulApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
@@ -10,41 +30,90 @@ struct GeulApp: App {
     }
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    private var windows: [NSWindow] = []
+    private static let cliLaunchMarker = "--geul-opened-by-cli"
+
+    private(set) static weak var shared: AppDelegate?
+
+    private(set) var windows: [NSWindow] = []
+    private(set) var isAgentMode = false
+    private var pendingAgentEntry: DispatchWorkItem?
+    private var receivedOpenURLs = false
+    private let launchedFromCLIWrapper: Bool
+    private var menubar: MenubarController?
+    private let onboarding = OnboardingWindow()
+
+    override init() {
+        self.launchedFromCLIWrapper = CommandLine.arguments.contains(Self.cliLaunchMarker)
+        super.init()
+        AppDelegate.shared = self
+    }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        true
+        !isAgentMode
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
+        applyActivationPolicy(
+            DockVisibilityPolicy.launchActivationPolicy(
+                launchedFromCLIWrapper: launchedFromCLIWrapper
+            )
+        )
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        // Apple Events(open:)가 didFinishLaunching 전에 호출됨
-        // 파일 없이 실행된 경우 usage 창 표시
-        DispatchQueue.main.async { [self] in
-            if windows.isEmpty {
-                openWindow(for: nil)
-            }
+        if launchedFromCLIWrapper {
+            scheduleCLIWrapperFallbackTermination()
+            return
         }
+
+        // LaunchServices may deliver open-file Apple Events around launch time.
+        // Defer Agent-mode entry briefly and cancel it if `application(_:open:)`
+        // receives URLs. This preserves lightweight CLI/Finder-open behavior
+        // instead of accidentally installing the resident agent.
+        let work = DispatchWorkItem { [weak self] in
+            guard let self,
+                  self.windows.isEmpty,
+                  !self.receivedOpenURLs else { return }
+            self.enterAgentMode()
+        }
+        pendingAgentEntry = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        RecentFilesStore.shared.flush()
+    }
+
+    func applicationShouldHandleReopen(
+        _ sender: NSApplication, hasVisibleWindows flag: Bool
+    ) -> Bool {
+        return true
     }
 
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         windows.removeAll { $0 === window }
+        if let policy = DockVisibilityPolicy.readerWindowsDidChangePolicy(
+            isAgentMode: isAgentMode,
+            readerWindowCount: windows.count
+        ) {
+            applyActivationPolicy(policy)
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
+        receivedOpenURLs = true
+        pendingAgentEntry?.cancel()
+        pendingAgentEntry = nil
         for url in urls {
             openWindow(for: url)
         }
     }
 
-    private func openWindow(for fileURL: URL?) {
+    func openWindow(for fileURL: URL?) {
+        applyActivationPolicy(DockVisibilityPolicy.readerWindowOpenedPolicy)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -59,7 +128,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.title = fileURL?.lastPathComponent ?? "geul"
         window.delegate = self
         window.center()
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         windows.append(window)
+
+        if let fileURL {
+            RecentFilesStore.shared.bump(fileURL)
+        }
+    }
+
+    // MARK: - Agent mode
+
+    private func enterAgentMode() {
+        guard !isAgentMode else { return }
+        pendingAgentEntry?.cancel()
+        pendingAgentEntry = nil
+        isAgentMode = true
+        let controller = MenubarController()
+        controller.install()
+        menubar = controller
+        HotkeyRegistrar.shared.wireIfEnabled()
+        let roots = SettingsStore.shared.indexRootsURLs
+        FileIndex.shared.bootstrap(roots: roots)
+        onboarding.showIfNeeded()
+    }
+
+    private func scheduleCLIWrapperFallbackTermination() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self,
+                  !self.isAgentMode,
+                  self.windows.isEmpty,
+                  !self.receivedOpenURLs else { return }
+            NSApp.terminate(nil)
+        }
+    }
+
+    private func applyActivationPolicy(
+        _ policy: NSApplication.ActivationPolicy
+    ) {
+        NSApp.setActivationPolicy(policy)
     }
 }

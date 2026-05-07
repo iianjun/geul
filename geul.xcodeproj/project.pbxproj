@@ -30,6 +30,24 @@
 		D5B9E2F3F6C8234D00000602 /* InputReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B9E2F3F6C8234D00000601 /* InputReader.swift */; };
 		E6CAF3B4A7D9345E00000702 /* TUIController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6CAF3B4A7D9345E00000701 /* TUIController.swift */; };
 		F7DBC4C5B8EA456F00000802 /* CLIMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7DBC4C5B8EA456F00000801 /* CLIMain.swift */; };
+		A1B2C3D4E5F60201 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60101 /* SettingsStore.swift */; };
+		A1B2C3D4E5F60230 /* SettingsThemesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60130 /* SettingsThemesTab.swift */; };
+		A1B2C3D4E5F60231 /* SettingsNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60131 /* SettingsNavigator.swift */; };
+		A1B2C3D4E5F60232 /* SettingsIndexingTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60132 /* SettingsIndexingTab.swift */; };
+		A1B2C3D4E5F60233 /* SettingsShortcutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60133 /* SettingsShortcutsTab.swift */; };
+		A1B2C3D4E5F60234 /* SettingsGeneralTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60134 /* SettingsGeneralTab.swift */; };
+		A1B2C3D4E5F60202 /* IndexedFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60102 /* IndexedFile.swift */; };
+		A1B2C3D4E5F60203 /* RecentFilesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60103 /* RecentFilesStore.swift */; };
+		A1B2C3D4E5F60204 /* HomeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60104 /* HomeScanner.swift */; };
+		A1B2C3D4E5F60205 /* HomeWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60105 /* HomeWatcher.swift */; };
+		A1B2C3D4E5F60206 /* FileIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60106 /* FileIndex.swift */; };
+		A1B2C3D4E5F60221 /* MenubarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60121 /* MenubarController.swift */; };
+		A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60122 /* PopupWindow.swift */; };
+		A1B2C3D4E5F60223 /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123 /* PopupView.swift */; };
+		A1B2C3D4E5F60224 /* HotkeyRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */; };
+		A1B2C3D4E5F60240 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60140 /* OnboardingView.swift */; };
+		A1B2C3D4E5F60241 /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60141 /* OnboardingWindow.swift */; };
+		A1B2C3D4E5F69030 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F69020 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +75,23 @@
 		D5B9E2F3F6C8234D00000601 /* InputReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputReader.swift; sourceTree = "<group>"; };
 		E6CAF3B4A7D9345E00000701 /* TUIController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TUIController.swift; sourceTree = "<group>"; };
 		F7DBC4C5B8EA456F00000801 /* CLIMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLIMain.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60101 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60130 /* SettingsThemesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsThemesTab.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60131 /* SettingsNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsNavigator.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60132 /* SettingsIndexingTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsIndexingTab.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60133 /* SettingsShortcutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsShortcutsTab.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60134 /* SettingsGeneralTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsGeneralTab.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60102 /* IndexedFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndexedFile.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60103 /* RecentFilesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentFilesStore.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60104 /* HomeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScanner.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60105 /* HomeWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWatcher.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60106 /* FileIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileIndex.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60121 /* MenubarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarController.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60122 /* PopupWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupWindow.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60123 /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRegistrar.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60140 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60141 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +99,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D4E5F69030 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,10 +133,63 @@
 				B7F3A1D2E4C6089B0000001B /* SettingsView.swift */,
 				B7F3A1D2E4C6089B0000001C /* ThemeSanitizer.swift */,
 				B7F3A1D2E4C6089B00000090 /* TUI */,
+				A1B2C3D4E5F60100 /* Settings */,
+				A1B2C3D4E5F60110 /* Index */,
+				A1B2C3D4E5F60120 /* Menubar */,
+				A1B2C3D4E5F60160 /* Onboarding */,
 				B7F3A1D2E4C6089B00000017 /* Resources */,
 				B7F3A1D2E4C6089B00000012 /* Assets.xcassets */,
 			);
 			path = geul;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60100 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60101 /* SettingsStore.swift */,
+				A1B2C3D4E5F60131 /* SettingsNavigator.swift */,
+				A1B2C3D4E5F60130 /* SettingsThemesTab.swift */,
+				A1B2C3D4E5F60132 /* SettingsIndexingTab.swift */,
+				A1B2C3D4E5F60133 /* SettingsShortcutsTab.swift */,
+				A1B2C3D4E5F60134 /* SettingsGeneralTab.swift */,
+			);
+			name = Settings;
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60110 /* Index */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60102 /* IndexedFile.swift */,
+				A1B2C3D4E5F60103 /* RecentFilesStore.swift */,
+				A1B2C3D4E5F60104 /* HomeScanner.swift */,
+				A1B2C3D4E5F60105 /* HomeWatcher.swift */,
+				A1B2C3D4E5F60106 /* FileIndex.swift */,
+			);
+			name = Index;
+			path = Index;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60120 /* Menubar */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60121 /* MenubarController.swift */,
+				A1B2C3D4E5F60122 /* PopupWindow.swift */,
+				A1B2C3D4E5F60123 /* PopupView.swift */,
+				A1B2C3D4E5F60124 /* HotkeyRegistrar.swift */,
+			);
+			name = Menubar;
+			path = Menubar;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60160 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60140 /* OnboardingView.swift */,
+				A1B2C3D4E5F60141 /* OnboardingWindow.swift */,
+			);
+			name = Onboarding;
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		B7F3A1D2E4C6089B00000090 /* TUI */ = {
@@ -141,6 +230,9 @@
 			dependencies = (
 			);
 			name = geul;
+			packageProductDependencies = (
+				A1B2C3D4E5F69020 /* KeyboardShortcuts */,
+			);
 			productName = geul;
 			productReference = B7F3A1D2E4C6089B00000013 /* geul.app */;
 			productType = "com.apple.product-type.application";
@@ -169,6 +261,9 @@
 				Base,
 			);
 			mainGroup = B7F3A1D2E4C6089B00000002;
+			packageReferences = (
+				A1B2C3D4E5F69010 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			productRefGroup = B7F3A1D2E4C6089B00000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -216,6 +311,23 @@
 				D5B9E2F3F6C8234D00000602 /* InputReader.swift in Sources */,
 				E6CAF3B4A7D9345E00000702 /* TUIController.swift in Sources */,
 				F7DBC4C5B8EA456F00000802 /* CLIMain.swift in Sources */,
+				A1B2C3D4E5F60201 /* SettingsStore.swift in Sources */,
+				A1B2C3D4E5F60230 /* SettingsThemesTab.swift in Sources */,
+				A1B2C3D4E5F60231 /* SettingsNavigator.swift in Sources */,
+				A1B2C3D4E5F60232 /* SettingsIndexingTab.swift in Sources */,
+				A1B2C3D4E5F60233 /* SettingsShortcutsTab.swift in Sources */,
+				A1B2C3D4E5F60234 /* SettingsGeneralTab.swift in Sources */,
+				A1B2C3D4E5F60202 /* IndexedFile.swift in Sources */,
+				A1B2C3D4E5F60203 /* RecentFilesStore.swift in Sources */,
+				A1B2C3D4E5F60204 /* HomeScanner.swift in Sources */,
+				A1B2C3D4E5F60205 /* HomeWatcher.swift in Sources */,
+				A1B2C3D4E5F60206 /* FileIndex.swift in Sources */,
+				A1B2C3D4E5F60221 /* MenubarController.swift in Sources */,
+				A1B2C3D4E5F60222 /* PopupWindow.swift in Sources */,
+				A1B2C3D4E5F60223 /* PopupView.swift in Sources */,
+				A1B2C3D4E5F60224 /* HotkeyRegistrar.swift in Sources */,
+				A1B2C3D4E5F60240 /* OnboardingView.swift in Sources */,
+				A1B2C3D4E5F60241 /* OnboardingWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -412,6 +524,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A1B2C3D4E5F69010 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1B2C3D4E5F69020 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D4E5F69010 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B7F3A1D2E4C6089B00000001 /* Project object */;
 }
