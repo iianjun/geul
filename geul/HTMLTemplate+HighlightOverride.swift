@@ -34,6 +34,10 @@ extension HTMLTemplate {
         color: #efb080;
     }
 
+    .hljs-title.class_.inherited__ {
+        color: #efb080;
+    }
+
     .hljs-string,
     .hljs-meta-string,
     .hljs-template-variable {
