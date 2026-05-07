@@ -10,6 +10,16 @@ final class MenubarController {
 
     init() {
         MenubarController.shared = self
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidResignActive(_:)),
+            name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     func install() {
@@ -33,8 +43,7 @@ final class MenubarController {
             NSStatusBar.system.removeStatusItem(item)
             statusItem = nil
         }
-        popup?.close()
-        popup = nil
+        hidePopup()
     }
 
     func showPopup() {
@@ -75,6 +84,7 @@ final class MenubarController {
 
     func hidePopup() {
         popup?.orderOut(nil)
+        popup = nil
     }
 
     func togglePopup() {
@@ -93,6 +103,10 @@ final class MenubarController {
         } else {
             togglePopup()
         }
+    }
+
+    @objc private func appDidResignActive(_ notification: Notification) {
+        hidePopup()
     }
 
     private func showDropdown() {
