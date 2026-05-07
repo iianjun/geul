@@ -5,6 +5,19 @@ struct MarkdownWebView: NSViewRepresentable {
     let html: String
     let fileURL: URL?
     let theme: Theme
+    let onMarkdownReload: (String) -> Void
+
+    init(
+        html: String,
+        fileURL: URL?,
+        theme: Theme,
+        onMarkdownReload: @escaping (String) -> Void = { _ in }
+    ) {
+        self.html = html
+        self.fileURL = fileURL
+        self.theme = theme
+        self.onMarkdownReload = onMarkdownReload
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -20,12 +33,15 @@ struct MarkdownWebView: NSViewRepresentable {
 
         context.coordinator.lastHTML = html
         context.coordinator.fileURL = fileURL
+        context.coordinator.onMarkdownReload = onMarkdownReload
         context.coordinator.lastAppliedTheme = theme
         webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
         return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
+        context.coordinator.onMarkdownReload = onMarkdownReload
+
         if html != context.coordinator.lastHTML {
             // Content changed: full reload. The new HTML embeds the current
             // theme, so update the applied baseline in lockstep.
@@ -50,6 +66,7 @@ struct MarkdownWebView: NSViewRepresentable {
         var fileWatcher: FileWatcher?
         weak var webView: WKWebView?
         var lastAppliedTheme: Theme?
+        var onMarkdownReload: (String) -> Void = { _ in }
         // A theme change that arrived before the first navigation finished.
         // Drained in didFinish so the fresh WebView picks it up.
         private var pendingThemeApply: Theme?
@@ -106,8 +123,10 @@ struct MarkdownWebView: NSViewRepresentable {
                 guard let markdown = try? String(contentsOf: url, encoding: .utf8) else { return }
                 let body = MarkdownRenderer.render(markdown)
                 guard let encoded = Self.jsStringEncode(body) else { return }
-                DispatchQueue.main.async {
-                    self?.webView?.evaluateJavaScript("updateContent(\(encoded))") { _, error in
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    onMarkdownReload(markdown)
+                    webView?.evaluateJavaScript("updateContent(\(encoded))") { _, error in
                         if let error {
                             print("[geul] updateContent error: \(error)")
                         }
