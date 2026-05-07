@@ -244,7 +244,7 @@ final class ThemeStore: ObservableObject {
         )
     }
 
-    private static let hardcodedDarkColors: [String: String] = [
+    static let hardcodedDarkColors: [String: String] = [
         "--bg-primary": "#181818",
         "--bg-secondary": "#2B2B2B",
         "--bg-code": "#2B2B2B",
