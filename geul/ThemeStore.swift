@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 
+@MainActor
 final class ThemeStore: ObservableObject {
     static let shared = ThemeStore()
 
@@ -16,11 +17,6 @@ final class ThemeStore: ObservableObject {
 
     private let configDir: URL
     private let themesDir: URL
-    private let settingsURL: URL
-
-    private struct Settings: Codable {
-        var theme: String?
-    }
 
     enum ThemeStoreError: LocalizedError {
         case cannotImportBuiltInName(String)
@@ -42,14 +38,9 @@ final class ThemeStore: ObservableObject {
     private init(home: URL = FileManager.default.homeDirectoryForCurrentUser) {
         self.configDir = home.appendingPathComponent(".config/geul")
         self.themesDir = configDir.appendingPathComponent("themes")
-        self.settingsURL = configDir.appendingPathComponent("settings.json")
 
         let loaded = Self.loadAllThemes(userDir: themesDir)
-        let settings = (try? JSONDecoder().decode(
-            Settings.self,
-            from: Data(contentsOf: settingsURL)
-        )) ?? Settings()
-        let initialName = settings.theme ?? Self.defaultThemeName
+        let initialName = SettingsStore.shared.settings.theme
 
         let active = loaded.first(where: { $0.name == initialName })
             ?? loaded.first(where: { $0.name == Self.defaultThemeName })
@@ -157,22 +148,7 @@ final class ThemeStore: ObservableObject {
         resolved = active.theme
 
         if persist {
-            persistSettings(name: active.name)
-        }
-    }
-
-    private func persistSettings(name: String) {
-        do {
-            try FileManager.default.createDirectory(
-                at: configDir,
-                withIntermediateDirectories: true
-            )
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(Settings(theme: name))
-            try data.write(to: settingsURL, options: .atomic)
-        } catch {
-            print("[geul] Failed to persist settings: \(error)")
+            SettingsStore.shared.update { $0.theme = active.name }
         }
     }
 
