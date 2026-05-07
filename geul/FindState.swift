@@ -38,3 +38,25 @@ struct FindResult: Equatable {
         return "\(currentIndex + 1) of \(total)"
     }
 }
+
+struct PendingFindRequestQueue {
+    private var requests: [FindRequest] = []
+
+    mutating func enqueue(_ request: FindRequest, lastAppliedRequestID: Int) {
+        guard request.action != .none, request.id > lastAppliedRequestID else {
+            return
+        }
+
+        guard !requests.contains(where: { $0.id == request.id }) else {
+            return
+        }
+
+        requests.append(request)
+    }
+
+    mutating func drain() -> [FindRequest] {
+        let drained = requests.sorted { $0.id < $1.id }
+        requests.removeAll()
+        return drained
+    }
+}
