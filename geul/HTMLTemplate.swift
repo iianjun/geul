@@ -28,6 +28,7 @@ enum HTMLTemplate {
             <style>\(highlightOverrideCSS)</style>
             <style>\(katexCSS ?? "")</style>
             <style>\(loadingCSS)</style>
+            <style id="geul-find-style">\(findCSS)</style>
         </head>
         <body>
             <article id="content" class="markdown-body">
@@ -41,6 +42,7 @@ enum HTMLTemplate {
             <script>\(autoRenderJS ?? "")</script>
             <script>\(mermaidJS ?? "")</script>
             <script>\(mermaidInitScript)</script>
+            <script>\(findScript)</script>
         </body>
         </html>
         """
