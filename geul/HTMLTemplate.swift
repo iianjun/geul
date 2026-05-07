@@ -12,6 +12,8 @@ enum HTMLTemplate {
         let hljsDarkJSON = ThemeSanitizer.jsStringLiteral(highlightDarkCSS)
         let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
         let initialHljs = hljsKey == "dark" ? highlightDarkCSS : highlightLightCSS
+        let initialHighlightOverride = highlightOverrideCSS(forHLJSVariantKey: hljsKey)
+        let cursorDarkHighlightOverrideJSON = ThemeSanitizer.jsStringLiteral(cursorDarkHighlightOverrideCSS)
         let sanitizedColors = ThemeSanitizer.sanitized(theme.colors)
         let colorsJSON = Self.encodeColorsJSON(sanitizedColors)
 
@@ -25,7 +27,7 @@ enum HTMLTemplate {
             <style id="geul-theme">\(themeCSS(theme))</style>
             <style>\(baseCSS)</style>
             <style id="geul-hljs">\(initialHljs)</style>
-            <style>\(highlightOverrideCSS)</style>
+            <style id="geul-hljs-override">\(initialHighlightOverride)</style>
             <style>\(katexCSS ?? "")</style>
             <style>\(loadingCSS)</style>
             <style id="geul-find-style">\(findCSS)</style>
@@ -37,6 +39,7 @@ enum HTMLTemplate {
             <script>
             window.__geulCurrentColors = \(colorsJSON);
             window.__geulHljsCSS = { default: \(hljsLightJSON), dark: \(hljsDarkJSON) };
+            window.__geulHljsOverrideCSS = { default: "", dark: \(cursorDarkHighlightOverrideJSON) };
             </script>
             <script>\(katexJS ?? "")</script>
             <script>\(autoRenderJS ?? "")</script>

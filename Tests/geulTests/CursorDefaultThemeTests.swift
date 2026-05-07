@@ -39,7 +39,7 @@ final class CursorDefaultThemeTests: XCTestCase {
     }
 
     func testHighlightOverrideUsesCursorTokenColors() {
-        let css = HTMLTemplate.highlightOverrideCSS
+        let css = HTMLTemplate.cursorDarkHighlightOverrideCSS
 
         XCTAssertTrue(css.contains("color: #82D2CE;"))
         XCTAssertTrue(css.contains("color: #efb080;"))
@@ -112,6 +112,43 @@ final class CursorDefaultThemeTests: XCTestCase {
         }
         """))
         XCTAssertFalse(css.contains("#c9d1d9"))
+    }
+
+    func testHighlightOverrideOnlyAppliesToDarkHighlightVariant() {
+        XCTAssertEqual(HTMLTemplate.highlightOverrideCSS(forHLJSVariantKey: "default"), "")
+        XCTAssertEqual(HTMLTemplate.highlightOverrideCSS(forHLJSVariantKey: "light"), "")
+        XCTAssertEqual(
+            HTMLTemplate.highlightOverrideCSS(forHLJSVariantKey: "dark"),
+            HTMLTemplate.cursorDarkHighlightOverrideCSS
+        )
+    }
+
+    func testComposedHTMLScopesHighlightOverrideByInitialVariantAndRuntimeMap() {
+        let lightTheme = Theme(
+            name: "Light",
+            colors: Self.cursorDarkColors.merging(["--bg-primary": "#ffffff"]) { _, new in new }
+        )
+        let darkHTML = HTMLTemplate.compose(
+            body: "<pre><code></code></pre>",
+            title: "Dark",
+            theme: Theme(name: "Default Dark", colors: Self.cursorDarkColors)
+        )
+        let lightHTML = HTMLTemplate.compose(
+            body: "<pre><code></code></pre>",
+            title: "Light",
+            theme: lightTheme
+        )
+
+        XCTAssertTrue(darkHTML.contains(#"<style id="geul-hljs-override">"#))
+        XCTAssertTrue(darkHTML.contains("window.__geulHljsOverrideCSS"))
+        XCTAssertTrue(darkHTML.contains(".hljs-comment"))
+        XCTAssertTrue(lightHTML.contains(#"<style id="geul-hljs-override"></style>"#))
+        XCTAssertTrue(lightHTML.contains("window.__geulHljsOverrideCSS"))
+    }
+
+    @MainActor
+    func testHardcodedDefaultDarkFallbackMatchesCursorDarkPalette() {
+        XCTAssertEqual(ThemeStore.hardcodedDarkColors, Self.cursorDarkColors)
     }
 
     private static let cursorDarkColors: [String: String] = [
