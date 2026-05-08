@@ -56,6 +56,15 @@ struct GeulApp: App {
     }
 }
 
+enum ReaderWindowSizing {
+    static let defaultContentSize = NSSize(width: 900, height: 700)
+    static let minimumContentSize = NSSize(width: 500, height: 300)
+
+    static func defaultContentRect(origin: NSPoint = .zero) -> NSRect {
+        NSRect(origin: origin, size: defaultContentSize)
+    }
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItemValidation {
     private static let cliLaunchMarker = "--geul-opened-by-cli"
@@ -174,23 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func openWindow(for fileURL: URL?) {
         applyActivationPolicy(DockVisibilityPolicy.readerWindowOpenedPolicy)
-        let findCommandBridge = FindCommandBridge()
-        let window = MarkdownWindow(
-            findCommandBridge: findCommandBridge,
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
-            styleMask: [.titled, .closable, .resizable, .miniaturizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.isReleasedWhenClosed = false
-        window.contentViewController = NSHostingController(
-            rootView: ContentView(
-                fileURL: fileURL,
-                findCommandBridge: findCommandBridge
-            )
-            .frame(minWidth: 500, minHeight: 300)
-        )
-        window.title = fileURL?.lastPathComponent ?? "geul"
+        let window = Self.makeReaderWindow(for: fileURL)
         window.delegate = self
         window.center()
         NSApp.activate(ignoringOtherApps: true)
@@ -200,6 +193,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if let fileURL {
             RecentFilesStore.shared.bump(fileURL)
         }
+    }
+
+    static func makeReaderWindow(for fileURL: URL?) -> MarkdownWindow {
+        let findCommandBridge = FindCommandBridge()
+        let window = MarkdownWindow(
+            findCommandBridge: findCommandBridge,
+            contentRect: ReaderWindowSizing.defaultContentRect(),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false
+        window.contentMinSize = ReaderWindowSizing.minimumContentSize
+        window.contentViewController = NSHostingController(
+            rootView: ContentView(
+                fileURL: fileURL,
+                findCommandBridge: findCommandBridge
+            )
+                .frame(
+                    minWidth: ReaderWindowSizing.minimumContentSize.width,
+                    minHeight: ReaderWindowSizing.minimumContentSize.height
+                )
+        )
+        window.setContentSize(ReaderWindowSizing.defaultContentSize)
+        window.title = fileURL?.lastPathComponent ?? "geul"
+        return window
     }
 
     // MARK: - Agent mode
