@@ -28,19 +28,22 @@ extension HTMLTemplate {
     }
 
     .mermaid-container {
-        margin-bottom: 20px;
+        position: relative;
+        margin: var(--cursor-spacing-1) 0 1rem;
         border-radius: var(--radius-lg);
-        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        background-color: var(--bg-primary);
         overflow: hidden;
-        box-shadow: var(--shadow-subtle);
+        box-shadow: none;
     }
 
     .mermaid-container .geul-loading {
         padding: 48px 24px;
+        background-color: var(--bg-primary);
     }
 
     .mermaid-container.rendered {
-        background-color: transparent;
+        background-color: var(--bg-primary);
         box-shadow: none;
     }
 
@@ -50,15 +53,26 @@ extension HTMLTemplate {
 
     .mermaid-container.rendered .mermaid {
         display: block !important;
+        margin: 0;
+        padding: var(--cursor-spacing-1-5);
+        background: transparent;
+        border: 0;
+        overflow: auto;
+    }
+
+    .mermaid-container.rendered svg {
+        display: block;
+        max-width: 100%;
+        height: auto;
     }
 
     .mermaid-error {
-        border-left: 3px solid var(--accent);
-        background-color: var(--bg-secondary);
-        padding: 16px 20px;
-        border-radius: 0 var(--radius) var(--radius) 0;
-        margin-bottom: 20px;
-        box-shadow: var(--shadow-subtle);
+        border: 1px solid var(--border);
+        background-color: var(--bg-primary);
+        padding: var(--cursor-spacing-4);
+        border-radius: var(--radius-lg);
+        margin: var(--cursor-spacing-1) 0 1rem;
+        box-shadow: none;
     }
 
     .mermaid-error-header {
