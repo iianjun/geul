@@ -20,17 +20,16 @@ final class HTMLTemplateFindTests: XCTestCase {
         ]
     )
 
-    func testComposeInjectsFindStyleAndScript() {
+    func testComposeInjectsFindScriptWithoutDocumentFindStyle() {
         let html = HTMLTemplate.compose(
             body: "<p>Alpha beta alpha</p>",
             title: "find.md",
             theme: theme
         )
 
-        XCTAssertTrue(html.contains("<style id=\"geul-find-style\">"))
-        XCTAssertTrue(html.contains("mark.geul-find-match"))
+        XCTAssertFalse(html.contains("<style id=\"geul-find-style\">"))
+        XCTAssertFalse(html.contains("mark.geul-find-match"))
         XCTAssertTrue(html.contains("window.geulFind = {"))
-        XCTAssertTrue(html.contains("geul-find-active"))
     }
 
     func testUpdateContentPreservesActiveFindQuery() {
@@ -44,9 +43,14 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("await renderMermaidDiagrams(container)"))
     }
 
-    func testFindScriptExcludesSVGAndScopesMarkCollectionToContent() {
+    func testFindScriptExcludesSVGAndDoesNotMutateRenderedText() {
         XCTAssertTrue(HTMLTemplate.findScript.contains("parent.closest('svg')"))
-        XCTAssertTrue(HTMLTemplate.findScript.contains("article#content mark.geul-find-match"))
+        XCTAssertTrue(HTMLTemplate.findScript.contains("createTreeWalker"))
+        XCTAssertTrue(HTMLTemplate.findScript.contains("countMatches"))
+        XCTAssertFalse(HTMLTemplate.findScript.contains("createElement('mark')"))
+        XCTAssertFalse(HTMLTemplate.findScript.contains("splitText"))
+        XCTAssertFalse(HTMLTemplate.findScript.contains("replaceChild"))
+        XCTAssertFalse(HTMLTemplate.findScript.contains("mark.geul-find-match"))
     }
 
     func testFindScriptUsesDeterministicCaseFolding() {
@@ -71,6 +75,14 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(HTMLTemplate.findScript.contains("version: 0"))
         XCTAssertTrue(HTMLTemplate.findScript.contains("state.version += 1"))
         XCTAssertTrue(HTMLTemplate.findScript.contains("state.version === snapshot.version"))
+    }
+
+    func testMarkdownWebViewUsesNativeWebKitFindForHighlighting() throws {
+        let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
+
+        XCTAssertTrue(source.contains("WKFindConfiguration"))
+        XCTAssertTrue(source.contains("webView.find("))
+        XCTAssertTrue(source.contains("clearNativeFindSelection"))
     }
 
     private static func markdownWebViewSourceURL() -> URL {

@@ -30,7 +30,6 @@ enum HTMLTemplate {
             <style id="geul-hljs-override">\(initialHighlightOverride)</style>
             <style>\(katexCSS ?? "")</style>
             <style>\(loadingCSS)</style>
-            <style id="geul-find-style">\(findCSS)</style>
         </head>
         <body>
             <article id="content" class="markdown-root markdown-body">
