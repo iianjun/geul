@@ -33,7 +33,7 @@ enum HTMLTemplate {
             <style id="geul-find-style">\(findCSS)</style>
         </head>
         <body>
-            <article id="content" class="markdown-body">
+            <article id="content" class="markdown-root markdown-body">
             \(body)
             </article>
             <script>

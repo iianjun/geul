@@ -6,13 +6,21 @@ extension HTMLTemplate {
     function buildMermaidThemeVariables(colors) {
         colors = colors || {};
         return {
-            primaryColor: colors['--bg-secondary'],
+            background: colors['--bg-primary'],
+            mainBkg: colors['--bg-primary'],
+            primaryColor: colors['--bg-primary'],
             primaryTextColor: colors['--text-primary'],
+            secondaryTextColor: colors['--text-primary'],
+            tertiaryTextColor: colors['--text-secondary'],
             primaryBorderColor: colors['--border-strong'],
-            lineColor: colors['--text-tertiary'],
+            nodeBorder: colors['--border-strong'],
+            lineColor: colors['--border-strong'],
             secondaryColor: colors['--bg-code'],
+            clusterBkg: colors['--bg-secondary'],
+            clusterBorder: colors['--border'],
+            edgeLabelBackground: colors['--bg-primary'],
             tertiaryColor: colors['--bg-primary'],
-            background: colors['--bg-primary']
+            textColor: colors['--text-primary']
         };
     }
 

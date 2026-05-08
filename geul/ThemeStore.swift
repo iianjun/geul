@@ -245,32 +245,32 @@ final class ThemeStore: ObservableObject {
     }
 
     static let hardcodedDarkColors: [String: String] = [
-        "--bg-primary": "#181818",
-        "--bg-secondary": "#2B2B2B",
-        "--bg-code": "#2B2B2B",
-        "--bg-code-border": "#313131",
+        "--bg-primary": "#141414",
+        "--bg-secondary": "#1E1E1E",
+        "--bg-code": "#1E1E1E",
+        "--bg-code-border": "#E4E4E413",
         "--text-primary": "#E4E4E4EB",
         "--text-secondary": "#E4E4E48D",
         "--text-tertiary": "#E4E4E45E",
         "--accent": "#81A1C1",
         "--accent-soft": "rgba(129, 161, 193, 0.14)",
-        "--border": "rgba(255, 255, 255, 0.18)",
-        "--border-strong": "rgba(255, 255, 255, 0.69)",
+        "--border": "#E4E4E413",
+        "--border-strong": "#E4E4E426",
         "--shadow-subtle": "none"
     ]
 
-    private static let hardcodedLightColors: [String: String] = [
-        "--bg-primary": "#fafaf9",
-        "--bg-secondary": "#f5f5f4",
-        "--bg-code": "#f5f5f4",
-        "--bg-code-border": "#0d9488",
-        "--text-primary": "#1c1917",
-        "--text-secondary": "#78716c",
-        "--text-tertiary": "#a8a29e",
-        "--accent": "#0d9488",
-        "--accent-soft": "rgba(13, 148, 136, 0.08)",
-        "--border": "#e7e5e4",
-        "--border-strong": "#d6d3d1",
-        "--shadow-subtle": "0 1px 2px rgba(28, 25, 23, 0.04)"
+    static let hardcodedLightColors: [String: String] = [
+        "--bg-primary": "#FCFCFC",
+        "--bg-secondary": "#F3F3F3",
+        "--bg-code": "#F3F3F3",
+        "--bg-code-border": "#14141413",
+        "--text-primary": "#141414EB",
+        "--text-secondary": "#1414148D",
+        "--text-tertiary": "#1414145E",
+        "--accent": "#3C7CAB",
+        "--accent-soft": "rgba(60, 124, 171, 0.12)",
+        "--border": "#14141413",
+        "--border-strong": "#14141426",
+        "--shadow-subtle": "none"
     ]
 }

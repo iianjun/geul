@@ -15,27 +15,68 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertEqual(theme.colors, Self.cursorDarkColors)
     }
 
+    func testBundledDefaultLightMatchesCursorLightPalette() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("geul/Resources/themes/default-light.json")
+        let data = try Data(contentsOf: url)
+        let theme = try JSONDecoder().decode(Theme.self, from: data)
+
+        XCTAssertEqual(theme.name, "Default Light")
+        XCTAssertEqual(theme.colors, Self.cursorLightColors)
+    }
+
     func testCursorDarkPaletteProducesExpectedCSSAndDarkHighlightVariant() {
         let theme = Theme(name: "Default Dark", colors: Self.cursorDarkColors)
         let css = HTMLTemplate.themeCSS(theme)
 
-        XCTAssertTrue(css.contains("--bg-primary: #181818;"))
+        XCTAssertTrue(css.contains("--bg-primary: #141414;"))
+        XCTAssertTrue(css.contains("--bg-secondary: #1E1E1E;"))
         XCTAssertTrue(css.contains("--accent: #81A1C1;"))
         XCTAssertTrue(css.contains("--text-primary: #E4E4E4EB;"))
+        XCTAssertTrue(css.contains("--border: #E4E4E413;"))
         XCTAssertEqual(ThemeSanitizer.hljsVariantKey(for: theme), "dark")
     }
 
-    func testBaseCSSUsesCursorMarkdownPreviewRules() {
+    func testBaseCSSUsesCursorMarkdownRootRules() {
         let css = HTMLTemplate.baseCSS
 
         XCTAssertTrue(css.contains("font-size: 14px;"))
         XCTAssertTrue(css.contains("line-height: 22px;"))
-        XCTAssertTrue(css.contains("padding: 0 26px 96px;"))
-        XCTAssertTrue(css.contains("border-left: 5px solid var(--text-tertiary);"))
-        XCTAssertTrue(css.contains("table > tbody > tr + tr > td"))
-        XCTAssertTrue(css.contains("padding: 5px 10px;"))
+        XCTAssertTrue(css.contains(".markdown-root,"))
+        XCTAssertTrue(css.contains("max-width: 800px;"))
+        XCTAssertTrue(css.contains("padding: 32px 24px 64px;"))
+        XCTAssertTrue(css.contains("font-size: 1.6em;"))
+        XCTAssertTrue(css.contains("padding: 1.5px 4px;"))
+        XCTAssertTrue(css.contains("border-radius: 5px;"))
+        XCTAssertTrue(css.contains("border-left: 3px solid var(--border-strong);"))
+        XCTAssertTrue(css.contains("border: 1px solid var(--border);"))
+        XCTAssertTrue(css.contains("border-radius: var(--radius-md);"))
+        XCTAssertTrue(css.contains("border-right: 1px solid var(--border);"))
+        XCTAssertTrue(css.contains("padding: 5px 9px;"))
+        XCTAssertFalse(css.contains("table > tbody > tr + tr > td"))
+        XCTAssertFalse(css.contains("padding-bottom: 0.3em;"))
+        XCTAssertFalse(css.contains("border-left: 5px solid"))
         XCTAssertFalse(css.contains("border-left: 3px solid var(--bg-code-border);"))
         XCTAssertFalse(css.contains("letter-spacing: -0.015em;"))
+    }
+
+    func testMermaidUsesCursorCodeBlockContainerAndThemeVariables() {
+        let loadingCSS = HTMLTemplate.loadingCSS
+        let mermaidScript = HTMLTemplate.mermaidInitScript
+
+        XCTAssertTrue(loadingCSS.contains(".mermaid-container {"))
+        XCTAssertTrue(loadingCSS.contains("border-radius: var(--radius-lg);"))
+        XCTAssertTrue(loadingCSS.contains("border: 1px solid var(--border);"))
+        XCTAssertTrue(loadingCSS.contains("background-color: var(--bg-primary);"))
+        XCTAssertFalse(loadingCSS.contains("box-shadow: var(--shadow-subtle);"))
+        XCTAssertTrue(mermaidScript.contains("primaryColor: colors['--bg-primary']"))
+        XCTAssertTrue(mermaidScript.contains("mainBkg: colors['--bg-primary']"))
+        XCTAssertTrue(mermaidScript.contains("nodeBorder: colors['--border-strong']"))
+        XCTAssertTrue(mermaidScript.contains("clusterBorder: colors['--border']"))
+        XCTAssertFalse(mermaidScript.contains("primaryColor: colors['--bg-secondary']"))
     }
 
     func testHighlightOverrideUsesCursorTokenColors() {
@@ -151,18 +192,38 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertEqual(ThemeStore.hardcodedDarkColors, Self.cursorDarkColors)
     }
 
+    @MainActor
+    func testHardcodedDefaultLightFallbackMatchesCursorLightPalette() {
+        XCTAssertEqual(ThemeStore.hardcodedLightColors, Self.cursorLightColors)
+    }
+
     private static let cursorDarkColors: [String: String] = [
-        "--bg-primary": "#181818",
-        "--bg-secondary": "#2B2B2B",
-        "--bg-code": "#2B2B2B",
-        "--bg-code-border": "#313131",
+        "--bg-primary": "#141414",
+        "--bg-secondary": "#1E1E1E",
+        "--bg-code": "#1E1E1E",
+        "--bg-code-border": "#E4E4E413",
         "--text-primary": "#E4E4E4EB",
         "--text-secondary": "#E4E4E48D",
         "--text-tertiary": "#E4E4E45E",
         "--accent": "#81A1C1",
         "--accent-soft": "rgba(129, 161, 193, 0.14)",
-        "--border": "rgba(255, 255, 255, 0.18)",
-        "--border-strong": "rgba(255, 255, 255, 0.69)",
+        "--border": "#E4E4E413",
+        "--border-strong": "#E4E4E426",
+        "--shadow-subtle": "none"
+    ]
+
+    private static let cursorLightColors: [String: String] = [
+        "--bg-primary": "#FCFCFC",
+        "--bg-secondary": "#F3F3F3",
+        "--bg-code": "#F3F3F3",
+        "--bg-code-border": "#14141413",
+        "--text-primary": "#141414EB",
+        "--text-secondary": "#1414148D",
+        "--text-tertiary": "#1414145E",
+        "--accent": "#3C7CAB",
+        "--accent-soft": "rgba(60, 124, 171, 0.12)",
+        "--border": "#14141413",
+        "--border-strong": "#14141426",
         "--shadow-subtle": "none"
     ]
 }
