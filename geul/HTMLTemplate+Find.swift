@@ -2,27 +2,12 @@ import Foundation
 
 extension HTMLTemplate {
 
-    static let findCSS = #"""
-    mark.geul-find-match {
-        padding: 0 2px;
-        border-radius: 3px;
-        background: color-mix(in srgb, var(--accent) 28%, transparent);
-        color: inherit;
-    }
-
-    mark.geul-find-match.geul-find-active {
-        background: var(--accent);
-        color: #ffffff;
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
-    }
-    """#
-
     static let findScript = #"""
     (function() {
         var state = {
             query: '',
-            marks: [],
             index: -1,
+            total: 0,
             version: 0
         };
 
@@ -34,24 +19,35 @@ extension HTMLTemplate {
             return {
                 query: state.query,
                 currentIndex: state.index,
-                total: state.marks.length
+                total: state.total
             };
         }
 
-        function removeMarks() {
-            state.marks.forEach(function(mark) {
-                var parent = mark.parentNode;
-                if (!parent) return;
+        function clearSelection() {
+            var selection = window.getSelection
+                ? window.getSelection()
+                : null;
+            if (selection) selection.removeAllRanges();
+        }
 
-                while (mark.firstChild) {
-                    parent.insertBefore(mark.firstChild, mark);
-                }
+        function setFindStart() {
+            var root = contentRoot();
+            var selection = window.getSelection
+                ? window.getSelection()
+                : null;
+            if (!root || !selection || typeof document.createRange !== 'function') {
+                return;
+            }
 
-                parent.removeChild(mark);
-                parent.normalize();
-            });
+            var range = document.createRange();
+            range.setStart(root, 0);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
 
-            state.marks = [];
+        function resetMatches() {
+            state.total = 0;
             state.index = -1;
         }
 
@@ -63,7 +59,6 @@ extension HTMLTemplate {
 
             var blockedTags = ['script', 'style', 'textarea', 'noscript'];
             if (blockedTags.indexOf(parent.tagName.toLowerCase()) !== -1) return false;
-            if (parent.closest('mark.geul-find-match')) return false;
             if (parent.closest('svg')) return false;
 
             return true;
@@ -90,13 +85,13 @@ extension HTMLTemplate {
             return nodes;
         }
 
-        function collectMatches(node, query) {
-            var matches = [];
+        function countNodeMatches(node, query) {
+            var count = 0;
             var text = node.nodeValue;
             var needle = query.toLowerCase();
 
             if (needle.length === 0) {
-                return matches;
+                return count;
             }
 
             for (var i = 0; i <= text.length - query.length; i++) {
@@ -104,80 +99,60 @@ extension HTMLTemplate {
                     continue;
                 }
 
-                matches.push({
-                    node: node,
-                    start: i,
-                    length: query.length
-                });
-
+                count += 1;
                 i += query.length - 1;
             }
 
-            return matches;
+            return count;
         }
 
-        function applyMatches(matches) {
-            for (var i = matches.length - 1; i >= 0; i--) {
-                var match = matches[i];
-                var node = match.node;
-                var selected = node.splitText(match.start);
-                selected.splitText(match.length);
-
-                var mark = document.createElement('mark');
-                mark.className = 'geul-find-match';
-                mark.textContent = selected.nodeValue;
-                selected.parentNode.replaceChild(mark, selected);
+        function countMatches(query) {
+            if (!query || query.length === 0) {
+                return 0;
             }
 
-            state.marks = Array.prototype.slice.call(
-                document.querySelectorAll('article#content mark.geul-find-match')
-            );
+            var root = contentRoot();
+            if (!root) {
+                return 0;
+            }
+
+            var total = 0;
+            textNodes(root).forEach(function(node) {
+                total += countNodeMatches(node, query);
+            });
+
+            return total;
         }
 
         function activate(index) {
-            state.marks.forEach(function(mark) {
-                mark.classList.remove('geul-find-active');
-            });
-
-            if (state.marks.length === 0) {
-                state.index = -1;
+            if (state.total === 0) {
+                resetMatches();
                 return result();
             }
 
-            state.index = ((index % state.marks.length) + state.marks.length)
-                % state.marks.length;
-
-            var active = state.marks[state.index];
-            active.classList.add('geul-find-active');
-            active.scrollIntoView({
-                block: 'center',
-                inline: 'nearest',
-                behavior: 'smooth'
-            });
+            state.index = ((index % state.total) + state.total) % state.total;
 
             return result();
         }
 
         function search(query) {
-            removeMarks();
             state.query = query || '';
             state.version += 1;
 
             if (state.query.length === 0) {
+                resetMatches();
+                clearSelection();
                 return result();
             }
 
-            var root = contentRoot();
-            if (!root) {
+            state.total = countMatches(state.query);
+            if (state.total === 0) {
+                state.index = -1;
+                clearSelection();
                 return result();
             }
 
-            var matches = [];
-            textNodes(root).forEach(function(node) {
-                matches = matches.concat(collectMatches(node, state.query));
-            });
-
-            applyMatches(matches);
+            setFindStart();
             return activate(0);
         }
 
@@ -186,7 +161,7 @@ extension HTMLTemplate {
                 query: state.query,
                 version: state.version
             };
-            removeMarks();
+            clearSelection();
             return snapshot;
         }
 
@@ -203,6 +178,8 @@ extension HTMLTemplate {
                 return search(query);
             }
 
+            resetMatches();
+            clearSelection();
             return result();
         }
 
@@ -217,12 +194,14 @@ extension HTMLTemplate {
             clear: function() {
                 state.query = '';
                 state.version += 1;
-                removeMarks();
+                resetMatches();
+                clearSelection();
                 return result();
             },
             currentQuery: function() {
                 return state.query;
             },
+            countMatches: countMatches,
             prepareForContentUpdate: prepareForContentUpdate,
             restoreAfterContentUpdate: restoreAfterContentUpdate,
             currentVersion: function() {

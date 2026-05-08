@@ -147,8 +147,9 @@ struct MarkdownWebView: NSViewRepresentable {
                 let body = MarkdownRenderer.render(markdown)
                 DispatchQueue.main.async { [weak self] in
                     guard let self else { return }
+                    guard let webView else { return }
                     onMarkdownReload(markdown)
-                    webView?.callAsyncJavaScript(
+                    webView.callAsyncJavaScript(
                         "return await updateContent(html);",
                         arguments: ["html": body],
                         in: nil,
@@ -156,7 +157,7 @@ struct MarkdownWebView: NSViewRepresentable {
                     ) { result in
                         switch result {
                         case .success(let value):
-                            self.publishFindResult(from: value)
+                            self.restoreNativeFindAfterContentUpdate(from: value, in: webView)
                         case .failure(let error):
                             print("[geul] updateContent error: \(error)")
                         }
@@ -234,12 +235,115 @@ struct MarkdownWebView: NSViewRepresentable {
             }
 
             lastAppliedFindRequestID = request.id
-            webView.evaluateJavaScript(script) { [weak self] result, error in
+            webView.evaluateJavaScript(script) { [weak self, weak webView] result, error in
                 if let error {
                     print("[geul] find command error: \(error)")
                 }
-                self?.publishFindResult(from: result)
+                guard let self else { return }
+                guard self.lastAppliedFindRequestID == request.id else { return }
+                guard let webView else {
+                    self.publishFindResult(from: result)
+                    return
+                }
+
+                self.handleFindScriptResult(
+                    result,
+                    for: request.action,
+                    requestID: request.id,
+                    in: webView
+                )
             }
+        }
+
+        private func handleFindScriptResult(
+            _ value: Any?,
+            for action: FindAction,
+            requestID: Int,
+            in webView: WKWebView
+        ) {
+            guard let result = Self.findResult(from: value) else { return }
+
+            switch action {
+            case .none:
+                break
+            case .search(let query):
+                runNativeFindIfNeeded(
+                    query: query,
+                    backwards: false,
+                    result: result,
+                    requestID: requestID,
+                    in: webView
+                )
+            case .next:
+                runNativeFindIfNeeded(
+                    query: result.query,
+                    backwards: false,
+                    result: result,
+                    requestID: requestID,
+                    in: webView
+                )
+            case .previous:
+                runNativeFindIfNeeded(
+                    query: result.query,
+                    backwards: true,
+                    result: result,
+                    requestID: requestID,
+                    in: webView
+                )
+            case .clear:
+                clearNativeFindSelection(in: webView)
+                publishFindResult(result)
+            }
+        }
+
+        private func restoreNativeFindAfterContentUpdate(from value: Any?, in webView: WKWebView) {
+            guard let result = Self.findResult(from: value) else { return }
+
+            runNativeFindIfNeeded(
+                query: result.query,
+                backwards: false,
+                result: result,
+                requestID: lastAppliedFindRequestID,
+                in: webView
+            )
+        }
+
+        private func runNativeFindIfNeeded(
+            query: String,
+            backwards: Bool,
+            result: FindResult,
+            requestID: Int,
+            in webView: WKWebView
+        ) {
+            guard !query.isEmpty, result.hasMatches else {
+                clearNativeFindSelection(in: webView)
+                publishFindResult(result)
+                return
+            }
+
+            let configuration = WKFindConfiguration()
+            configuration.backwards = backwards
+            configuration.caseSensitive = false
+            configuration.wraps = true
+
+            webView.find(query, configuration: configuration) { [weak self] nativeResult in
+                guard let self else { return }
+                guard self.lastAppliedFindRequestID == requestID else { return }
+
+                if nativeResult.matchFound {
+                    self.publishFindResult(result)
+                } else {
+                    let emptyResult = FindResult(query: query, currentIndex: -1, total: 0)
+                    self.publishFindResult(emptyResult)
+                }
+            }
+        }
+
+        private func clearNativeFindSelection(in webView: WKWebView) {
+            webView.evaluateJavaScript(
+                "window.getSelection && window.getSelection().removeAllRanges();",
+                completionHandler: nil
+            )
         }
 
         private func publishFindResult(from value: Any?) {
