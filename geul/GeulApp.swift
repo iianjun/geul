@@ -63,6 +63,11 @@ struct GeulApp: App {
                     AppDelegate.zoomActiveMarkdownWindowOut()
                 }
                 .keyboardShortcut("-", modifiers: .command)
+
+                Button("Actual Size") {
+                    AppDelegate.resetActiveMarkdownWindowZoom()
+                }
+                .keyboardShortcut("0", modifiers: .command)
             }
         }
     }
@@ -189,6 +194,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         activeMarkdownWindow?.zoomOut()
     }
 
+    static func resetActiveMarkdownWindowZoom() {
+        activeMarkdownWindow?.resetZoom()
+    }
+
     private static var activeMarkdownWindow: MarkdownWindow? {
         NSApp.keyWindow as? MarkdownWindow
     }
@@ -217,8 +226,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     static func makeReaderWindow(for fileURL: URL?) -> MarkdownWindow {
         let findCommandBridge = FindCommandBridge()
+        let readerState = ReaderWindowState()
         let window = MarkdownWindow(
             findCommandBridge: findCommandBridge,
+            readerState: readerState,
             contentRect: ReaderWindowSizing.defaultContentRect(),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered,
@@ -229,6 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.contentViewController = NSHostingController(
             rootView: ContentView(
                 fileURL: fileURL,
+                readerWindowState: readerState,
                 findCommandBridge: findCommandBridge
             )
                 .frame(
