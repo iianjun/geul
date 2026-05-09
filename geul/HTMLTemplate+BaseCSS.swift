@@ -43,8 +43,7 @@ extension HTMLTemplate {
 
     .markdown-root,
     .markdown-body {
-        max-width: 800px;
-        margin: 0 auto;
+        margin: 0;
         padding: 32px 24px 64px;
     }
 
