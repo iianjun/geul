@@ -32,10 +32,22 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(html.contains("window.geulFind = {"))
     }
 
-    func testMarkdownBodyUsesFullWindowWidth() {
-        XCTAssertFalse(HTMLTemplate.baseCSS.contains("max-width: 800px"))
-        XCTAssertFalse(HTMLTemplate.baseCSS.contains("margin: 0 auto"))
+    func testMarkdownBodyDefaultsToLeftAlignedFullWindowWidth() {
         XCTAssertTrue(HTMLTemplate.baseCSS.contains("margin: 0;"))
+        XCTAssertTrue(HTMLTemplate.baseCSS.contains(".markdown-root.reader-align-center,"))
+        XCTAssertTrue(HTMLTemplate.baseCSS.contains("max-width: 800px"))
+        XCTAssertTrue(HTMLTemplate.baseCSS.contains("margin: 0 auto"))
+    }
+
+    func testComposeAppliesReaderAlignmentClass() {
+        let html = HTMLTemplate.compose(
+            body: "<p>Aligned</p>",
+            title: "aligned.md",
+            theme: theme,
+            readerAlignment: .right
+        )
+
+        XCTAssertTrue(html.contains("reader-align-right"))
     }
 
     func testUpdateContentPreservesActiveFindQuery() {
@@ -89,6 +101,15 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(source.contains("WKFindConfiguration"))
         XCTAssertTrue(source.contains("webView.find("))
         XCTAssertTrue(source.contains("clearNativeFindSelection"))
+    }
+
+    func testMarkdownWebViewAppliesReaderAlignmentWithoutReloading() throws {
+        let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
+
+        XCTAssertTrue(source.contains("applyReaderAlignment"))
+        XCTAssertTrue(source.contains("content.classList.remove("))
+        XCTAssertTrue(source.contains("reader-align-center"))
+        XCTAssertTrue(source.contains("content.classList.add"))
     }
 
     private static func markdownWebViewSourceURL() -> URL {

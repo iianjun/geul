@@ -15,6 +15,7 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertFalse(settings.hotkey.enabled)
         XCTAssertFalse(settings.launchAtLogin)
         XCTAssertEqual(settings.recentFilesCount, 10)
+        XCTAssertEqual(settings.readerAlignment, .left)
     }
 
     func testDefaultsWhenFileMissing() {
@@ -23,6 +24,7 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(settings.indexRoots, [NSHomeDirectory()])
         XCTAssertFalse(settings.hotkey.enabled)
         XCTAssertEqual(settings.recentFilesCount, 10)
+        XCTAssertEqual(settings.readerAlignment, .left)
     }
 
     func testEncodeThenDecodeRoundTrip() throws {
@@ -31,6 +33,7 @@ final class SettingsStoreTests: XCTestCase {
         original.hotkey.enabled = true
         original.launchAtLogin = true
         original.recentFilesCount = 15
+        original.readerAlignment = .right
 
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(SettingsStore.Settings.self, from: data)

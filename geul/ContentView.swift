@@ -6,6 +6,7 @@ struct ContentView: View {
     @ObservedObject var readerWindowState: ReaderWindowState
     @ObservedObject var findCommandBridge: FindCommandBridge
     @StateObject private var themeStore = ThemeStore.shared
+    @ObservedObject private var settingsStore = SettingsStore.shared
     @State private var html: String?
     @State private var markdown: String?
     @State private var errorMessage: String?
@@ -39,6 +40,7 @@ struct ContentView: View {
                     html: html,
                     fileURL: fileURL,
                     theme: themeStore.resolved,
+                    readerAlignment: settingsStore.settings.readerAlignment,
                     findRequest: findRequest,
                     onFindResult: handleFindResult,
                     onMarkdownReload: { reloadedMarkdown in
@@ -120,13 +122,15 @@ struct ContentView: View {
             let source = try String(contentsOf: fileURL, encoding: .utf8)
             let title = fileURL.lastPathComponent
             let theme = themeStore.resolved
+            let readerAlignment = settingsStore.settings.readerAlignment
             let rendered = await withCheckedContinuation { (continuation: CheckedContinuation<String, Never>) in
                 DispatchQueue.global(qos: .userInitiated).async {
                     let body = MarkdownRenderer.render(source)
                     let result = HTMLTemplate.compose(
                         body: body,
                         title: title,
-                        theme: theme
+                        theme: theme,
+                        readerAlignment: readerAlignment
                     )
                     continuation.resume(returning: result)
                 }

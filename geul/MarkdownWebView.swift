@@ -5,6 +5,7 @@ struct MarkdownWebView: NSViewRepresentable {
     let html: String
     let fileURL: URL?
     let theme: Theme
+    let readerAlignment: ReaderAlignment
     let findRequest: FindRequest
     let onFindResult: (FindResult) -> Void
     let onMarkdownReload: (String) -> Void
@@ -13,6 +14,7 @@ struct MarkdownWebView: NSViewRepresentable {
         html: String,
         fileURL: URL?,
         theme: Theme,
+        readerAlignment: ReaderAlignment,
         findRequest: FindRequest = .initial,
         onFindResult: @escaping (FindResult) -> Void = { _ in },
         onMarkdownReload: @escaping (String) -> Void = { _ in }
@@ -20,6 +22,7 @@ struct MarkdownWebView: NSViewRepresentable {
         self.html = html
         self.fileURL = fileURL
         self.theme = theme
+        self.readerAlignment = readerAlignment
         self.findRequest = findRequest
         self.onFindResult = onFindResult
         self.onMarkdownReload = onMarkdownReload
@@ -40,6 +43,7 @@ struct MarkdownWebView: NSViewRepresentable {
         context.coordinator.lastHTML = html
         context.coordinator.fileURL = fileURL
         context.coordinator.lastAppliedTheme = theme
+        context.coordinator.lastAppliedReaderAlignment = readerAlignment
         context.coordinator.queueFindRequestIfNeeded(findRequest)
         webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
         return webView
@@ -54,6 +58,7 @@ struct MarkdownWebView: NSViewRepresentable {
             // theme, so update the applied baseline in lockstep.
             context.coordinator.lastHTML = html
             context.coordinator.lastAppliedTheme = theme
+            context.coordinator.lastAppliedReaderAlignment = readerAlignment
             context.coordinator.queueFindRequestIfNeeded(findRequest)
             webView.alphaValue = 0
             webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
@@ -63,6 +68,11 @@ struct MarkdownWebView: NSViewRepresentable {
         if context.coordinator.lastAppliedTheme != theme {
             context.coordinator.lastAppliedTheme = theme
             context.coordinator.applyTheme(theme)
+        }
+
+        if context.coordinator.lastAppliedReaderAlignment != readerAlignment {
+            context.coordinator.lastAppliedReaderAlignment = readerAlignment
+            context.coordinator.applyReaderAlignment(readerAlignment)
         }
 
         context.coordinator.handleFindRequest(findRequest, in: webView)
@@ -76,12 +86,14 @@ struct MarkdownWebView: NSViewRepresentable {
         var fileWatcher: FileWatcher?
         weak var webView: WKWebView?
         var lastAppliedTheme: Theme?
+        var lastAppliedReaderAlignment: ReaderAlignment?
         var onFindResult: (FindResult) -> Void
         var onMarkdownReload: (String) -> Void
         var lastAppliedFindRequestID = FindRequest.initial.id
         // A theme change that arrived before the first navigation finished.
         // Drained in didFinish so the fresh WebView picks it up.
         private var pendingThemeApply: Theme?
+        private var pendingReaderAlignmentApply: ReaderAlignment?
         private var pendingFindRequests = PendingFindRequestQueue()
 
         init(
@@ -110,6 +122,11 @@ struct MarkdownWebView: NSViewRepresentable {
             if let pending = pendingThemeApply {
                 pendingThemeApply = nil
                 applyTheme(pending)
+            }
+
+            if let pending = pendingReaderAlignmentApply {
+                pendingReaderAlignmentApply = nil
+                applyReaderAlignment(pending)
             }
 
             drainPendingFindRequest(in: webView)
@@ -197,6 +214,34 @@ struct MarkdownWebView: NSViewRepresentable {
                 }
             } catch {
                 print("[geul] Failed to encode theme colors: \(error)")
+            }
+        }
+
+        // MARK: - Reader Alignment
+
+        func applyReaderAlignment(_ alignment: ReaderAlignment) {
+            guard let webView, webView.isLoading == false else {
+                pendingReaderAlignmentApply = alignment
+                return
+            }
+
+            let alignmentClass = "reader-align-\(alignment.rawValue)"
+            let script = """
+            (() => {
+                const content = document.getElementById('content');
+                if (!content) { return; }
+                content.classList.remove(
+                    'reader-align-left',
+                    'reader-align-center',
+                    'reader-align-right'
+                );
+                content.classList.add('\(alignmentClass)');
+            })();
+            """
+            webView.evaluateJavaScript(script) { _, error in
+                if let error {
+                    print("[geul] applyReaderAlignment error: \(error)")
+                }
             }
         }
 
