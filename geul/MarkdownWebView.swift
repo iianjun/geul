@@ -192,59 +192,6 @@ struct MarkdownWebView: NSViewRepresentable {
             webView?.window?.title = title
         }
 
-        // MARK: - Theme Patching
-
-        func applyTheme(_ theme: Theme) {
-            // Queue until the first navigation completes; otherwise the
-            // <style id="geul-theme"> element doesn't exist yet.
-            guard let webView, webView.isLoading == false else {
-                pendingThemeApply = theme
-                return
-            }
-            do {
-                let sanitized = ThemeSanitizer.sanitized(theme.colors)
-                let data = try JSONEncoder().encode(sanitized)
-                guard let colorsJSON = String(data: data, encoding: .utf8) else { return }
-                let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
-                let script = "setTheme(\(colorsJSON), '\(hljsKey)')"
-                webView.evaluateJavaScript(script) { _, error in
-                    if let error {
-                        print("[geul] setTheme error: \(error)")
-                    }
-                }
-            } catch {
-                print("[geul] Failed to encode theme colors: \(error)")
-            }
-        }
-
-        // MARK: - Reader Alignment
-
-        func applyReaderAlignment(_ alignment: ReaderAlignment) {
-            guard let webView, webView.isLoading == false else {
-                pendingReaderAlignmentApply = alignment
-                return
-            }
-
-            let alignmentClass = "reader-align-\(alignment.rawValue)"
-            let script = """
-            (() => {
-                const content = document.getElementById('content');
-                if (!content) { return; }
-                content.classList.remove(
-                    'reader-align-left',
-                    'reader-align-center',
-                    'reader-align-right'
-                );
-                content.classList.add('\(alignmentClass)');
-            })();
-            """
-            webView.evaluateJavaScript(script) { _, error in
-                if let error {
-                    print("[geul] applyReaderAlignment error: \(error)")
-                }
-            }
-        }
-
         // MARK: - Find Bridge
 
         func queueFindRequestIfNeeded(_ request: FindRequest) {
@@ -472,6 +419,57 @@ struct MarkdownWebView: NSViewRepresentable {
 
         deinit {
             fileWatcher?.stop()
+        }
+    }
+}
+
+extension MarkdownWebView.Coordinator {
+    func applyTheme(_ theme: Theme) {
+        // Queue until the first navigation completes; otherwise the
+        // <style id="geul-theme"> element doesn't exist yet.
+        guard let webView, webView.isLoading == false else {
+            pendingThemeApply = theme
+            return
+        }
+        do {
+            let sanitized = ThemeSanitizer.sanitized(theme.colors)
+            let data = try JSONEncoder().encode(sanitized)
+            guard let colorsJSON = String(data: data, encoding: .utf8) else { return }
+            let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
+            let script = "setTheme(\(colorsJSON), '\(hljsKey)')"
+            webView.evaluateJavaScript(script) { _, error in
+                if let error {
+                    print("[geul] setTheme error: \(error)")
+                }
+            }
+        } catch {
+            print("[geul] Failed to encode theme colors: \(error)")
+        }
+    }
+
+    func applyReaderAlignment(_ alignment: ReaderAlignment) {
+        guard let webView, webView.isLoading == false else {
+            pendingReaderAlignmentApply = alignment
+            return
+        }
+
+        let alignmentClass = "reader-align-\(alignment.rawValue)"
+        let script = """
+        (() => {
+            const content = document.getElementById('content');
+            if (!content) { return; }
+            content.classList.remove(
+                'reader-align-left',
+                'reader-align-center',
+                'reader-align-right'
+            );
+            content.classList.add('\(alignmentClass)');
+        })();
+        """
+        webView.evaluateJavaScript(script) { _, error in
+            if let error {
+                print("[geul] applyReaderAlignment error: \(error)")
+            }
         }
     }
 }
