@@ -16,6 +16,7 @@ final class ReaderWindowState: ObservableObject {
 }
 
 final class MarkdownWindow: NSWindow {
+    let fileURL: URL?
     let findCommandBridge: FindCommandBridge
     let readerState: ReaderWindowState
     private weak var markdownWebView: WKWebView?
@@ -28,6 +29,7 @@ final class MarkdownWindow: NSWindow {
     }
 
     init(
+        fileURL: URL?,
         findCommandBridge: FindCommandBridge,
         readerState: ReaderWindowState,
         contentRect: NSRect,
@@ -35,6 +37,7 @@ final class MarkdownWindow: NSWindow {
         backing backingStoreType: NSWindow.BackingStoreType,
         defer flag: Bool
     ) {
+        self.fileURL = fileURL
         self.findCommandBridge = findCommandBridge
         self.readerState = readerState
         super.init(

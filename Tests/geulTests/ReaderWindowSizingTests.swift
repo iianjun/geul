@@ -71,4 +71,29 @@ final class ReaderWindowSizingTests: XCTestCase {
         XCTAssertEqual(webView.pageZoom, 1, accuracy: 0.001)
         XCTAssertEqual(window.readerState.zoomPercent, 100)
     }
+
+    func testOpenWindowReusesExistingWindowForSameStandardizedFileURL() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("geul-window-reuse-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let fileURL = tempDir.appendingPathComponent("note.md")
+        try "# Note\n".write(to: fileURL, atomically: true, encoding: .utf8)
+        let equivalentURL = URL(
+            fileURLWithPath: tempDir.appendingPathComponent("subdir/../note.md").path
+        )
+        _ = NSApplication.shared
+        let delegate = AppDelegate()
+        defer { delegate.windows.forEach { $0.close() } }
+
+        delegate.openWindow(for: fileURL)
+        let firstWindow = try XCTUnwrap(delegate.windows.first as? MarkdownWindow)
+
+        delegate.openWindow(for: equivalentURL)
+
+        XCTAssertEqual(delegate.windows.count, 1)
+        XCTAssertTrue(delegate.windows.first.map { $0 === firstWindow } ?? false)
+        XCTAssertEqual(firstWindow.fileURL, fileURL.standardizedFileURL)
+    }
 }
