@@ -1,7 +1,12 @@
 import Foundation
 
 enum HTMLTemplate {
-    static func compose(body: String, title: String, theme: Theme) -> String {
+    static func compose(
+        body: String,
+        title: String,
+        theme: Theme,
+        readerAlignment: ReaderAlignment = .left
+    ) -> String {
         let highlightLightCSS = loadResource("github.min", ext: "css") ?? ""
         let highlightDarkCSS = loadResource("github-dark.min", ext: "css") ?? ""
         let katexCSS = loadResource("katex.min", ext: "css")
@@ -32,7 +37,7 @@ enum HTMLTemplate {
             <style>\(loadingCSS)</style>
         </head>
         <body>
-            <article id="content" class="markdown-root markdown-body">
+            <article id="content" class="markdown-root markdown-body reader-align-\(readerAlignment.rawValue)">
             \(body)
             </article>
             <script>
