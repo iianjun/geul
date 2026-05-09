@@ -54,7 +54,7 @@ struct GeulApp: App {
                 .keyboardShortcut("g", modifiers: [.command, .shift])
             }
 
-            CommandMenu("View") {
+            CommandGroup(after: .toolbar) {
                 Picker(
                     "Reader Alignment",
                     selection: Binding(
