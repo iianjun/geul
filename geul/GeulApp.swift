@@ -51,6 +51,18 @@ struct GeulApp: App {
                     )
                 }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
+
+                Divider()
+
+                Button("Zoom In") {
+                    AppDelegate.zoomActiveMarkdownWindowIn()
+                }
+                .keyboardShortcut("+", modifiers: .command)
+
+                Button("Zoom Out") {
+                    AppDelegate.zoomActiveMarkdownWindowOut()
+                }
+                .keyboardShortcut("-", modifiers: .command)
             }
         }
     }
@@ -167,6 +179,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             to: window,
             from: menuItem
         )
+    }
+
+    static func zoomActiveMarkdownWindowIn() {
+        activeMarkdownWindow?.zoomIn()
+    }
+
+    static func zoomActiveMarkdownWindowOut() {
+        activeMarkdownWindow?.zoomOut()
     }
 
     private static var activeMarkdownWindow: MarkdownWindow? {

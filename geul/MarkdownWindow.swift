@@ -1,7 +1,16 @@
 import AppKit
+import WebKit
 
 final class MarkdownWindow: NSWindow {
     let findCommandBridge: FindCommandBridge
+    private weak var markdownWebView: WKWebView?
+    private var currentPageZoom: CGFloat = 1
+
+    private enum PageZoom {
+        static let step: CGFloat = 0.1
+        static let minimum: CGFloat = 0.5
+        static let maximum: CGFloat = 3
+    }
 
     init(
         findCommandBridge: FindCommandBridge,
@@ -38,9 +47,27 @@ final class MarkdownWindow: NSWindow {
         return validate(action)
     }
 
+    func attachMarkdownWebView(_ webView: WKWebView) {
+        markdownWebView = webView
+        webView.pageZoom = currentPageZoom
+    }
+
+    func zoomIn() {
+        setPageZoom(currentPageZoom + PageZoom.step)
+    }
+
+    func zoomOut() {
+        setPageZoom(currentPageZoom - PageZoom.step)
+    }
+
     private func dispatch(_ action: NSTextFinder.Action) {
         guard let command = findMenuCommand(for: action) else { return }
         findCommandBridge.dispatch(command)
+    }
+
+    private func setPageZoom(_ pageZoom: CGFloat) {
+        currentPageZoom = min(max(pageZoom, PageZoom.minimum), PageZoom.maximum)
+        markdownWebView?.pageZoom = currentPageZoom
     }
 
     private func validate(_ action: NSTextFinder.Action) -> Bool {
