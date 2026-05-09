@@ -32,6 +32,12 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(html.contains("window.geulFind = {"))
     }
 
+    func testMarkdownBodyUsesFullWindowWidth() {
+        XCTAssertFalse(HTMLTemplate.baseCSS.contains("max-width: 800px"))
+        XCTAssertFalse(HTMLTemplate.baseCSS.contains("margin: 0 auto"))
+        XCTAssertTrue(HTMLTemplate.baseCSS.contains("margin: 0;"))
+    }
+
     func testUpdateContentPreservesActiveFindQuery() {
         XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("findSnapshot"))
         XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("prepareForContentUpdate()"))
