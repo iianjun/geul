@@ -1,5 +1,11 @@
 import Foundation
 
+enum ReaderAlignment: String, Codable, CaseIterable, Equatable, Hashable {
+    case left
+    case center
+    case right
+}
+
 @MainActor
 final class SettingsStore: ObservableObject {
     static let shared = SettingsStore()
@@ -14,6 +20,7 @@ final class SettingsStore: ObservableObject {
         var hotkey: HotkeySettings = .init()
         var launchAtLogin: Bool = false
         var recentFilesCount: Int = 10
+        var readerAlignment: ReaderAlignment = .left
 
         init() {}
 
@@ -29,6 +36,10 @@ final class SettingsStore: ObservableObject {
                 ?? false
             self.recentFilesCount = try container.decodeIfPresent(Int.self, forKey: .recentFilesCount)
                 ?? 10
+            self.readerAlignment = try container.decodeIfPresent(
+                ReaderAlignment.self,
+                forKey: .readerAlignment
+            ) ?? .left
         }
     }
 
