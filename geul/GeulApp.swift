@@ -22,6 +22,7 @@ enum DockVisibilityPolicy {
 
 struct GeulApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    @StateObject private var settingsStore = SettingsStore.shared
 
     var body: some Scene {
         Settings {
@@ -51,6 +52,22 @@ struct GeulApp: App {
                     )
                 }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
+            }
+
+            CommandMenu("View") {
+                Picker(
+                    "Reader Alignment",
+                    selection: Binding(
+                        get: { settingsStore.settings.readerAlignment },
+                        set: { alignment in
+                            settingsStore.update { $0.readerAlignment = alignment }
+                        }
+                    )
+                ) {
+                    Text("Align Left").tag(ReaderAlignment.left)
+                    Text("Align Center").tag(ReaderAlignment.center)
+                    Text("Align Right").tag(ReaderAlignment.right)
+                }
 
                 Divider()
 

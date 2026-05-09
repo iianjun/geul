@@ -47,6 +47,18 @@ extension HTMLTemplate {
         padding: 32px 24px 64px;
     }
 
+    .markdown-root.reader-align-center,
+    .markdown-body.reader-align-center {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .markdown-root.reader-align-right,
+    .markdown-body.reader-align-right {
+        max-width: 800px;
+        margin: 0 0 0 auto;
+    }
+
     .markdown-root > *:first-child,
     .markdown-body > *:first-child {
         margin-top: 0;
