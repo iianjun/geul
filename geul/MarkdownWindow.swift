@@ -1,8 +1,23 @@
 import AppKit
+import Combine
 import WebKit
+
+@MainActor
+final class ReaderWindowState: ObservableObject {
+    @Published private(set) var pageZoom: CGFloat = 1
+
+    var zoomPercent: Int {
+        Int((pageZoom * 100).rounded())
+    }
+
+    func updatePageZoom(_ pageZoom: CGFloat) {
+        self.pageZoom = pageZoom
+    }
+}
 
 final class MarkdownWindow: NSWindow {
     let findCommandBridge: FindCommandBridge
+    let readerState: ReaderWindowState
     private weak var markdownWebView: WKWebView?
     private var currentPageZoom: CGFloat = 1
 
@@ -14,12 +29,14 @@ final class MarkdownWindow: NSWindow {
 
     init(
         findCommandBridge: FindCommandBridge,
+        readerState: ReaderWindowState,
         contentRect: NSRect,
         styleMask style: NSWindow.StyleMask,
         backing backingStoreType: NSWindow.BackingStoreType,
         defer flag: Bool
     ) {
         self.findCommandBridge = findCommandBridge
+        self.readerState = readerState
         super.init(
             contentRect: contentRect,
             styleMask: style,
@@ -60,6 +77,10 @@ final class MarkdownWindow: NSWindow {
         setPageZoom(currentPageZoom - PageZoom.step)
     }
 
+    func resetZoom() {
+        setPageZoom(1)
+    }
+
     private func dispatch(_ action: NSTextFinder.Action) {
         guard let command = findMenuCommand(for: action) else { return }
         findCommandBridge.dispatch(command)
@@ -67,6 +88,7 @@ final class MarkdownWindow: NSWindow {
 
     private func setPageZoom(_ pageZoom: CGFloat) {
         currentPageZoom = min(max(pageZoom, PageZoom.minimum), PageZoom.maximum)
+        readerState.updatePageZoom(currentPageZoom)
         markdownWebView?.pageZoom = currentPageZoom
     }
 
