@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     let fileURL: URL?
+    @ObservedObject var readerWindowState: ReaderWindowState
     @ObservedObject var findCommandBridge: FindCommandBridge
     @StateObject private var themeStore = ThemeStore.shared
     @State private var html: String?
@@ -18,8 +19,13 @@ struct ContentView: View {
     @State private var findResult = FindResult.empty
     @State private var findFocusRequestID = 0
 
-    init(fileURL: URL?, findCommandBridge: FindCommandBridge = FindCommandBridge()) {
+    init(
+        fileURL: URL?,
+        readerWindowState: ReaderWindowState,
+        findCommandBridge: FindCommandBridge = FindCommandBridge()
+    ) {
         self.fileURL = fileURL
+        self.readerWindowState = readerWindowState
         self.findCommandBridge = findCommandBridge
     }
 
@@ -68,9 +74,10 @@ struct ContentView: View {
             }
         }
         .background(
-            TitlebarCopyButton(
-                isVisible: markdown != nil,
+            TitlebarReaderControls(
+                isCopyVisible: markdown != nil,
                 didCopyMarkdown: didCopyMarkdown,
+                zoomPercent: readerWindowState.zoomPercent,
                 action: copyMarkdown
             )
             .frame(width: 0, height: 0)
@@ -237,9 +244,10 @@ struct ContentView: View {
     }
 }
 
-private struct TitlebarCopyButton: NSViewRepresentable {
-    let isVisible: Bool
+private struct TitlebarReaderControls: NSViewRepresentable {
+    let isCopyVisible: Bool
     let didCopyMarkdown: Bool
+    let zoomPercent: Int
     let action: () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -254,7 +262,11 @@ private struct TitlebarCopyButton: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSView, context: Context) {
         context.coordinator.action = action
-        context.coordinator.state = State(isVisible: isVisible, didCopyMarkdown: didCopyMarkdown)
+        context.coordinator.state = State(
+            isCopyVisible: isCopyVisible,
+            didCopyMarkdown: didCopyMarkdown,
+            zoomPercent: zoomPercent
+        )
 
         DispatchQueue.main.async {
             context.coordinator.installIfNeeded(from: nsView)
@@ -267,13 +279,15 @@ private struct TitlebarCopyButton: NSViewRepresentable {
     }
 
     struct State {
-        let isVisible: Bool
+        let isCopyVisible: Bool
         let didCopyMarkdown: Bool
+        let zoomPercent: Int
     }
 
     final class Coordinator: NSObject {
         var action: () -> Void = {}
-        var state = State(isVisible: false, didCopyMarkdown: false)
+        var state = State(isCopyVisible: false, didCopyMarkdown: false, zoomPercent: 100)
+        private weak var zoomLabel: NSTextField?
         private weak var button: NSButton?
         private weak var installedWindow: NSWindow?
         private var constraints: [NSLayoutConstraint] = []
@@ -291,6 +305,13 @@ private struct TitlebarCopyButton: NSViewRepresentable {
                 return
             }
 
+            let zoomLabel = NSTextField(labelWithString: "")
+            zoomLabel.translatesAutoresizingMaskIntoConstraints = false
+            zoomLabel.font = .monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+            zoomLabel.textColor = .secondaryLabelColor
+            zoomLabel.alignment = .right
+            zoomLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
             let button = NSButton()
             button.translatesAutoresizingMaskIntoConstraints = false
             button.isBordered = false
@@ -301,21 +322,30 @@ private struct TitlebarCopyButton: NSViewRepresentable {
             button.target = self
             button.action = #selector(copyMarkdown)
 
+            titlebarView.addSubview(zoomLabel)
             titlebarView.addSubview(button)
             constraints = [
                 button.trailingAnchor.constraint(equalTo: titlebarView.trailingAnchor, constant: -16),
                 button.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
                 button.widthAnchor.constraint(equalToConstant: 16),
-                button.heightAnchor.constraint(equalToConstant: 16)
+                button.heightAnchor.constraint(equalToConstant: 16),
+                zoomLabel.trailingAnchor.constraint(equalTo: button.leadingAnchor, constant: -10),
+                zoomLabel.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
+                zoomLabel.widthAnchor.constraint(equalToConstant: 42)
             ]
             NSLayoutConstraint.activate(constraints)
 
+            self.zoomLabel = zoomLabel
             self.button = button
             installedWindow = window
             applyState()
         }
 
         func applyState() {
+            zoomLabel?.stringValue = "\(state.zoomPercent)%"
+            zoomLabel?.toolTip = "Zoom \(state.zoomPercent)%"
+            zoomLabel?.setAccessibilityLabel("Zoom \(state.zoomPercent)%")
+
             guard let button else { return }
 
             let title = state.didCopyMarkdown ? "Copied" : "Copy Markdown"
@@ -327,14 +357,16 @@ private struct TitlebarCopyButton: NSViewRepresentable {
             image?.size = NSSize(width: 12, height: 12)
             button.image = image
             button.toolTip = title
-            button.isHidden = !state.isVisible
-            button.isEnabled = state.isVisible
+            button.isHidden = !state.isCopyVisible
+            button.isEnabled = state.isCopyVisible
             button.setAccessibilityLabel(title)
         }
 
         func uninstall() {
             NSLayoutConstraint.deactivate(constraints)
             constraints.removeAll()
+            zoomLabel?.removeFromSuperview()
+            zoomLabel = nil
             button?.removeFromSuperview()
             button = nil
             installedWindow = nil
