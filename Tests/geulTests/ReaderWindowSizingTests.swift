@@ -35,7 +35,9 @@ final class ReaderWindowSizingTests: XCTestCase {
         window.zoomIn()
 
         XCTAssertEqual(webView.pageZoom, 1.1, accuracy: 0.001)
+        XCTAssertEqual(window.readerState.zoomPercent, 110)
         XCTAssertEqual(otherWebView.pageZoom, 1, accuracy: 0.001)
+        XCTAssertEqual(otherWindow.readerState.zoomPercent, 100)
     }
 
     func testZoomClampsToReadableRange() {
@@ -48,10 +50,25 @@ final class ReaderWindowSizingTests: XCTestCase {
             window.zoomOut()
         }
         XCTAssertEqual(webView.pageZoom, 0.5, accuracy: 0.001)
+        XCTAssertEqual(window.readerState.zoomPercent, 50)
 
         for _ in 0..<40 {
             window.zoomIn()
         }
         XCTAssertEqual(webView.pageZoom, 3, accuracy: 0.001)
+        XCTAssertEqual(window.readerState.zoomPercent, 300)
+    }
+
+    func testResetZoomRestoresActualSize() {
+        let window = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/example.md"))
+        defer { window.close() }
+        let webView = WKWebView()
+        window.attachMarkdownWebView(webView)
+
+        window.zoomIn()
+        window.resetZoom()
+
+        XCTAssertEqual(webView.pageZoom, 1, accuracy: 0.001)
+        XCTAssertEqual(window.readerState.zoomPercent, 100)
     }
 }
