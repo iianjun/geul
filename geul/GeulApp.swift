@@ -229,11 +229,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func openWindow(for fileURL: URL?) {
         applyActivationPolicy(DockVisibilityPolicy.readerWindowOpenedPolicy)
+        if let fileURL,
+           let existingWindow = existingReaderWindow(for: fileURL) {
+            focus(existingWindow)
+            RecentFilesStore.shared.bump(fileURL)
+            return
+        }
+
         let window = Self.makeReaderWindow(for: fileURL)
         window.delegate = self
         window.center()
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        focus(window)
         windows.append(window)
 
         if let fileURL {
@@ -242,9 +248,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
 
     static func makeReaderWindow(for fileURL: URL?) -> MarkdownWindow {
+        let standardizedFileURL = fileURL?.standardizedFileURL
         let findCommandBridge = FindCommandBridge()
         let readerState = ReaderWindowState()
         let window = MarkdownWindow(
+            fileURL: standardizedFileURL,
             findCommandBridge: findCommandBridge,
             readerState: readerState,
             contentRect: ReaderWindowSizing.defaultContentRect(),
@@ -256,7 +264,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.contentMinSize = ReaderWindowSizing.minimumContentSize
         window.contentViewController = NSHostingController(
             rootView: ContentView(
-                fileURL: fileURL,
+                fileURL: standardizedFileURL,
                 readerWindowState: readerState,
                 findCommandBridge: findCommandBridge
             )
@@ -266,8 +274,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                 )
         )
         window.setContentSize(ReaderWindowSizing.defaultContentSize)
-        window.title = fileURL?.lastPathComponent ?? "geul"
+        window.representedURL = standardizedFileURL
+        window.title = standardizedFileURL?.lastPathComponent ?? "geul"
         return window
+    }
+
+    private func existingReaderWindow(for fileURL: URL) -> MarkdownWindow? {
+        let standardizedFileURL = fileURL.standardizedFileURL
+        return windows
+            .compactMap { $0 as? MarkdownWindow }
+            .first { $0.fileURL == standardizedFileURL }
+    }
+
+    private func focus(_ window: NSWindow) {
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - Agent mode
