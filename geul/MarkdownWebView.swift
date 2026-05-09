@@ -101,6 +101,9 @@ struct MarkdownWebView: NSViewRepresentable {
 
             if self.webView == nil {
                 self.webView = webView
+                if let window = webView.window as? MarkdownWindow {
+                    window.attachMarkdownWebView(webView)
+                }
                 startWatching()
             }
 

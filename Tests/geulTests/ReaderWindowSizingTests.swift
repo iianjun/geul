@@ -1,4 +1,5 @@
 import AppKit
+import WebKit
 import XCTest
 @testable import geul
 
@@ -17,5 +18,40 @@ final class ReaderWindowSizingTests: XCTestCase {
         XCTAssertEqual(window.contentMinSize.height, ReaderWindowSizing.minimumContentSize.height)
         XCTAssertEqual(window.title, "example.md")
         XCTAssertNotNil(window.contentViewController)
+    }
+
+    func testZoomAppliesOnlyToAttachedWebView() {
+        let window = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/example.md"))
+        let otherWindow = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/other.md"))
+        defer {
+            window.close()
+            otherWindow.close()
+        }
+        let webView = WKWebView()
+        let otherWebView = WKWebView()
+        window.attachMarkdownWebView(webView)
+        otherWindow.attachMarkdownWebView(otherWebView)
+
+        window.zoomIn()
+
+        XCTAssertEqual(webView.pageZoom, 1.1, accuracy: 0.001)
+        XCTAssertEqual(otherWebView.pageZoom, 1, accuracy: 0.001)
+    }
+
+    func testZoomClampsToReadableRange() {
+        let window = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/example.md"))
+        defer { window.close() }
+        let webView = WKWebView()
+        window.attachMarkdownWebView(webView)
+
+        for _ in 0..<40 {
+            window.zoomOut()
+        }
+        XCTAssertEqual(webView.pageZoom, 0.5, accuracy: 0.001)
+
+        for _ in 0..<40 {
+            window.zoomIn()
+        }
+        XCTAssertEqual(webView.pageZoom, 3, accuracy: 0.001)
     }
 }
