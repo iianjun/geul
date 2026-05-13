@@ -106,4 +106,26 @@ final class ReaderWindowSizingTests: XCTestCase {
         XCTAssertTrue(delegate.windows.first.map { $0 === firstWindow } ?? false)
         XCTAssertEqual(firstWindow.fileURL, fileURL.standardizedFileURL)
     }
+
+    func testNumberedTabSelectionUsesCurrentTabbedWindowOrder() {
+        let firstWindow = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/first.md"))
+        let secondWindow = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/second.md"))
+        let thirdWindow = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/third.md"))
+        defer {
+            firstWindow.close()
+            secondWindow.close()
+            thirdWindow.close()
+        }
+
+        firstWindow.addTabbedWindow(secondWindow, ordered: .above)
+        firstWindow.addTabbedWindow(thirdWindow, ordered: .above)
+        let tabbedWindows = firstWindow.tabbedWindows ?? []
+
+        XCTAssertEqual(tabbedWindows.count, 3)
+        for index in tabbedWindows.indices {
+            XCTAssertTrue(AppDelegate.windowTab(in: firstWindow, at: index) === tabbedWindows[index])
+        }
+        XCTAssertNil(AppDelegate.windowTab(in: firstWindow, at: 3))
+        XCTAssertNil(AppDelegate.windowTab(in: firstWindow, at: -1))
+    }
 }

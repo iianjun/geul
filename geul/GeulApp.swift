@@ -85,6 +85,18 @@ struct GeulApp: App {
                     AppDelegate.resetActiveMarkdownWindowZoom()
                 }
                 .keyboardShortcut("0", modifiers: .command)
+
+                Divider()
+
+                ForEach(1...9, id: \.self) { number in
+                    Button("Select Tab \(number)") {
+                        AppDelegate.selectWindowTab(at: number - 1)
+                    }
+                    .keyboardShortcut(
+                        KeyEquivalent(Character(String(number))),
+                        modifiers: .command
+                    )
+                }
             }
         }
     }
@@ -213,6 +225,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     static func resetActiveMarkdownWindowZoom() {
         activeMarkdownWindow?.resetZoom()
+    }
+
+    static func selectWindowTab(at index: Int) {
+        guard let window = windowTab(in: NSApp.keyWindow, at: index) else { return }
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    static func windowTab(in window: NSWindow?, at index: Int) -> NSWindow? {
+        guard let window, index >= 0 else { return nil }
+
+        let tabbedWindows = window.tabbedWindows ?? [window]
+        guard tabbedWindows.indices.contains(index) else { return nil }
+        return tabbedWindows[index]
     }
 
     private static var activeMarkdownWindow: MarkdownWindow? {
