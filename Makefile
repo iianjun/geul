@@ -16,7 +16,8 @@ kill:
 	@pkill -f geul 2>/dev/null || true
 
 install: build-xcode
-	@BUILT=$$(xcodebuild -project geul.xcodeproj -scheme geul -showBuildSettings 2>/dev/null | grep ' BUILT_PRODUCTS_DIR' | sed 's/.*= //'); \
+	@set -e; \
+	BUILT=$$(xcodebuild -project geul.xcodeproj -scheme geul -showBuildSettings 2>/dev/null | grep ' BUILT_PRODUCTS_DIR' | sed 's/.*= //'); \
 	APP="$$BUILT/geul.app"; \
 	WRAPPER="$$APP/Contents/Resources/Resources/gl"; \
 	NEW="/usr/local/bin/gl"; \
