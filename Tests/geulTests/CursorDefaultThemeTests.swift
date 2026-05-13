@@ -81,6 +81,37 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertFalse(mermaidScript.contains("primaryColor: colors['--bg-secondary']"))
     }
 
+    func testMermaidZoomViewerUsesThemeAwareCSS() {
+        let loadingCSS = HTMLTemplate.loadingCSS
+
+        XCTAssertTrue(loadingCSS.contains(".mermaid-zoom-button"))
+        XCTAssertTrue(loadingCSS.contains(".mermaid-zoom-overlay"))
+        XCTAssertTrue(loadingCSS.contains(".mermaid-zoom-toolbar"))
+        XCTAssertTrue(loadingCSS.contains(".mermaid-zoom-stage"))
+        XCTAssertTrue(loadingCSS.contains(".mermaid-zoom-content"))
+        XCTAssertTrue(loadingCSS.contains("color-mix(in srgb, var(--bg-primary)"))
+        XCTAssertTrue(loadingCSS.contains("background-color: var(--bg-secondary);"))
+        XCTAssertTrue(loadingCSS.contains("color: var(--text-primary);"))
+        XCTAssertTrue(loadingCSS.contains("border: 1px solid var(--border);"))
+        XCTAssertTrue(loadingCSS.contains("outline: 2px solid var(--accent);"))
+    }
+
+    func testMermaidZoomViewerScriptInstallsControlsAndInteractions() {
+        let mermaidScript = HTMLTemplate.mermaidInitScript
+
+        XCTAssertTrue(mermaidScript.contains("function installMermaidZoomControls(container)"))
+        XCTAssertTrue(mermaidScript.contains("function openMermaidZoomOverlay(container, opener)"))
+        XCTAssertTrue(mermaidScript.contains("function closeMermaidZoomOverlay()"))
+        XCTAssertTrue(mermaidScript.contains("function fitMermaidZoomToStage(state)"))
+        XCTAssertTrue(mermaidScript.contains("function zoomMermaidOverlayTo(state, nextScale, anchorX, anchorY)"))
+        XCTAssertTrue(mermaidScript.contains("button.className = 'mermaid-zoom-button';"))
+        XCTAssertTrue(mermaidScript.contains("button.setAttribute('aria-label', 'Open diagram zoom viewer');"))
+        XCTAssertTrue(mermaidScript.contains("installMermaidZoomControls(container);"))
+        XCTAssertTrue(mermaidScript.contains("stage.addEventListener('wheel'"))
+        XCTAssertTrue(mermaidScript.contains("stage.addEventListener('pointerdown'"))
+        XCTAssertTrue(mermaidScript.contains("document.addEventListener('keydown', onKeyDown);"))
+    }
+
     func testHighlightOverrideUsesCursorTokenColors() {
         let css = HTMLTemplate.cursorDarkHighlightOverrideCSS
 

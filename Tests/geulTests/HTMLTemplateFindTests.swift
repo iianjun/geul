@@ -61,6 +61,32 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("await renderMermaidDiagrams(container)"))
     }
 
+    func testMermaidZoomOverlayClosesBeforeContentAndThemeRerender() throws {
+        let mermaidScript = HTMLTemplate.mermaidInitScript
+
+        let updateStart = try XCTUnwrap(mermaidScript.range(of: "async function updateContent(html)"))
+        let contentReplace = try XCTUnwrap(mermaidScript.range(
+            of: "container.innerHTML = html;",
+            range: updateStart.upperBound..<mermaidScript.endIndex
+        ))
+        let updateClose = try XCTUnwrap(mermaidScript.range(
+            of: "closeMermaidZoomOverlay();",
+            range: updateStart.upperBound..<contentReplace.lowerBound
+        ))
+        XCTAssertLessThan(updateClose.lowerBound, contentReplace.lowerBound)
+
+        let themeStart = try XCTUnwrap(mermaidScript.range(of: "function setTheme(colors, hljsKey)"))
+        let themeRerender = try XCTUnwrap(mermaidScript.range(
+            of: "var containers = content.querySelectorAll('.mermaid-container');",
+            range: themeStart.upperBound..<mermaidScript.endIndex
+        ))
+        let themeClose = try XCTUnwrap(mermaidScript.range(
+            of: "closeMermaidZoomOverlay();",
+            range: themeStart.upperBound..<themeRerender.lowerBound
+        ))
+        XCTAssertLessThan(themeClose.lowerBound, themeRerender.lowerBound)
+    }
+
     func testFindScriptExcludesSVGAndDoesNotMutateRenderedText() {
         XCTAssertTrue(HTMLTemplate.findScript.contains("parent.closest('svg')"))
         XCTAssertTrue(HTMLTemplate.findScript.contains("createTreeWalker"))
