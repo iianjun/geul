@@ -66,6 +66,156 @@ extension HTMLTemplate {
         height: auto;
     }
 
+    .mermaid-zoom-button {
+        position: absolute;
+        top: var(--cursor-spacing-2);
+        right: var(--cursor-spacing-2);
+        z-index: 2;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        color: var(--text-primary);
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        opacity: 0;
+        pointer-events: none;
+        cursor: pointer;
+        box-shadow: none;
+        transition: opacity 0.12s ease, border-color 0.12s ease;
+    }
+
+    .mermaid-container.rendered:hover .mermaid-zoom-button,
+    .mermaid-container.rendered:focus-within .mermaid-zoom-button {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .mermaid-zoom-button:hover {
+        border-color: var(--border-strong);
+    }
+
+    .mermaid-zoom-button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    .mermaid-zoom-button svg {
+        width: 15px;
+        height: 15px;
+        display: block;
+        pointer-events: none;
+    }
+
+    .mermaid-zoom-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        padding: 24px;
+        background-color: color-mix(in srgb, var(--bg-primary) 82%, transparent);
+        color: var(--text-primary);
+    }
+
+    .mermaid-zoom-dialog {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: none;
+    }
+
+    .mermaid-zoom-stage {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .mermaid-zoom-stage.dragging {
+        cursor: grabbing;
+    }
+
+    .mermaid-zoom-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: center center;
+        will-change: transform;
+    }
+
+    .mermaid-zoom-content svg {
+        display: block;
+        max-width: none;
+        height: auto;
+    }
+
+    .mermaid-zoom-toolbar {
+        position: absolute;
+        top: var(--cursor-spacing-2);
+        right: var(--cursor-spacing-2);
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: var(--cursor-spacing-1);
+        padding: var(--cursor-spacing-1);
+        color: var(--text-primary);
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: none;
+    }
+
+    .mermaid-zoom-control {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        color: var(--text-primary);
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font: inherit;
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .mermaid-zoom-control:hover {
+        border-color: var(--border-strong);
+    }
+
+    .mermaid-zoom-control:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    .mermaid-zoom-fit {
+        width: 34px;
+        font-size: 11px;
+    }
+
+    .mermaid-zoom-percent {
+        min-width: 44px;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+    }
+
     .mermaid-error {
         border: 1px solid var(--border);
         background-color: var(--bg-primary);
