@@ -110,6 +110,12 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertTrue(mermaidScript.contains("stage.addEventListener('wheel'"))
         XCTAssertTrue(mermaidScript.contains("stage.addEventListener('pointerdown'"))
         XCTAssertTrue(mermaidScript.contains("document.addEventListener('keydown', onKeyDown);"))
+        XCTAssertTrue(mermaidScript.contains("function updateMermaidZoomStageInsets(state)"))
+        XCTAssertTrue(mermaidScript.contains("state.stage.style.top = topInset + 'px';"))
+        XCTAssertTrue(mermaidScript.contains("state.scale = Math.min(geulMermaidZoomOptions.maxScale, fitScale);"))
+        XCTAssertTrue(mermaidScript.contains("state.minScale = Math.min(geulMermaidZoomOptions.minScale, state.scale);"))
+        XCTAssertTrue(mermaidScript.contains("clampMermaidZoomScale(nextScale, state.minScale);"))
+        XCTAssertTrue(mermaidScript.contains("event.key === 'Tab'"))
     }
 
     func testHighlightOverrideUsesCursorTokenColors() {

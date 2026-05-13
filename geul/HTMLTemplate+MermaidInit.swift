@@ -27,17 +27,12 @@ extension HTMLTemplate {
     var geulMermaidZoomActiveOverlay = null;
     var geulMermaidZoomLastOpener = null;
     var geulMermaidZoomOptions = {
-        minScale: 0.25,
-        maxScale: 6,
-        zoomStep: 1.2,
-        fitPadding: 56
+        minScale: 0.25, maxScale: 6, zoomStep: 1.2, fitPadding: 56, toolbarGap: 24
     };
 
-    function clampMermaidZoomScale(scale) {
-        return Math.min(
-            geulMermaidZoomOptions.maxScale,
-            Math.max(geulMermaidZoomOptions.minScale, scale)
-        );
+    function clampMermaidZoomScale(scale, minScale) {
+        var lowerBound = minScale == null ? geulMermaidZoomOptions.minScale : minScale;
+        return Math.min(geulMermaidZoomOptions.maxScale, Math.max(lowerBound, scale));
     }
 
     function closeMermaidZoomOverlay() {
@@ -109,7 +104,17 @@ extension HTMLTemplate {
         state.percent.textContent = Math.round(state.scale * 100) + '%';
     }
 
+    function updateMermaidZoomStageInsets(state) {
+        if (!state.toolbar) return;
+        var topInset = Math.ceil(
+            state.toolbar.getBoundingClientRect().height + geulMermaidZoomOptions.toolbarGap
+        );
+        state.stage.style.top = topInset + 'px';
+    }
+
     function fitMermaidZoomToStage(state) {
+        updateMermaidZoomStageInsets(state);
+
         var stageRect = state.stage.getBoundingClientRect();
         var availableWidth = Math.max(1, stageRect.width - geulMermaidZoomOptions.fitPadding);
         var availableHeight = Math.max(1, stageRect.height - geulMermaidZoomOptions.fitPadding);
@@ -118,14 +123,15 @@ extension HTMLTemplate {
             availableHeight / state.sourceSize.height
         );
 
-        state.scale = clampMermaidZoomScale(fitScale);
+        state.scale = Math.min(geulMermaidZoomOptions.maxScale, fitScale);
+        state.minScale = Math.min(geulMermaidZoomOptions.minScale, state.scale);
         state.x = 0;
         state.y = 0;
         updateMermaidZoomTransform(state);
     }
 
     function zoomMermaidOverlayTo(state, nextScale, anchorX, anchorY) {
-        var clampedScale = clampMermaidZoomScale(nextScale);
+        var clampedScale = clampMermaidZoomScale(nextScale, state.minScale);
         var stageRect = state.stage.getBoundingClientRect();
         var centerX = stageRect.left + (stageRect.width / 2) + state.x;
         var centerY = stageRect.top + (stageRect.height / 2) + state.y;
@@ -215,19 +221,36 @@ extension HTMLTemplate {
             overlay: overlay,
             stage: stage,
             content: content,
+            toolbar: toolbar,
             percent: percent,
             sourceSize: sourceSize,
             scale: 1,
+            minScale: geulMermaidZoomOptions.minScale,
             x: 0,
             y: 0
         };
 
         var dragging = null;
-
         function onKeyDown(event) {
             if (event.key === 'Escape') {
                 event.preventDefault();
                 closeMermaidZoomOverlay();
+                return;
+            }
+            if (event.key === 'Tab') {
+                var focusable = toolbar.querySelectorAll('button');
+                if (focusable.length === 0) return;
+                var first = focusable[0], last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                } else if (!toolbar.contains(document.activeElement)) {
+                    event.preventDefault();
+                    first.focus();
+                }
             }
         }
 
