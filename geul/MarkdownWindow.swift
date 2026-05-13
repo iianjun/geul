@@ -69,6 +69,7 @@ final class MarkdownWindow: NSWindow {
 
     func attachMarkdownWebView(_ webView: WKWebView) {
         markdownWebView = webView
+        webView.allowsMagnification = true
         webView.pageZoom = currentPageZoom
     }
 
