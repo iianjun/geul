@@ -28,11 +28,25 @@ install: build-xcode
 	if [ -L "$$OLD" ]; then \
 	  OLD_TARGET=$$(readlink "$$OLD"); \
 	  case "$$OLD_TARGET" in \
-	    *"/geul.app/Contents/Resources/Resources/geul"|*"/geul.app/Contents/Resources/Resources/gl") rm "$$OLD" ;; \
+	    "$$APP/Contents/Resources/Resources/geul"|"$$APP/Contents/Resources/Resources/gl"|\
+	    "$$HOME/Library/Developer/Xcode/DerivedData/geul-"*/Build/Products/Debug/geul.app/Contents/Resources/Resources/geul|\
+	    "$$HOME/Library/Developer/Xcode/DerivedData/geul-"*/Build/Products/Debug/geul.app/Contents/Resources/Resources/gl) rm "$$OLD" ;; \
 	    *) echo "Refusing to remove unmanaged $$OLD -> $$OLD_TARGET" >&2; exit 1 ;; \
 	  esac; \
 	elif [ -e "$$OLD" ]; then \
 	  echo "Refusing to remove unmanaged $$OLD (not a symlink)" >&2; \
+	  exit 1; \
+	fi; \
+	if [ -L "$$NEW" ]; then \
+	  NEW_TARGET=$$(readlink "$$NEW"); \
+	  case "$$NEW_TARGET" in \
+	    "$$APP/Contents/Resources/Resources/geul"|"$$APP/Contents/Resources/Resources/gl"|\
+	    "$$HOME/Library/Developer/Xcode/DerivedData/geul-"*/Build/Products/Debug/geul.app/Contents/Resources/Resources/geul|\
+	    "$$HOME/Library/Developer/Xcode/DerivedData/geul-"*/Build/Products/Debug/geul.app/Contents/Resources/Resources/gl) ;; \
+	    *) echo "Refusing to overwrite unmanaged $$NEW -> $$NEW_TARGET" >&2; exit 1 ;; \
+	  esac; \
+	elif [ -e "$$NEW" ]; then \
+	  echo "Refusing to overwrite unmanaged $$NEW (not a symlink)" >&2; \
 	  exit 1; \
 	fi; \
 	ln -sf "$$WRAPPER" "$$NEW"; \
