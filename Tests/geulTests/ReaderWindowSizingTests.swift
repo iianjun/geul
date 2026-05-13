@@ -40,6 +40,16 @@ final class ReaderWindowSizingTests: XCTestCase {
         XCTAssertEqual(otherWindow.readerState.zoomPercent, 100)
     }
 
+    func testAttachedWebViewAllowsTrackpadMagnification() {
+        let window = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/example.md"))
+        defer { window.close() }
+        let webView = WKWebView()
+
+        window.attachMarkdownWebView(webView)
+
+        XCTAssertTrue(webView.allowsMagnification)
+    }
+
     func testZoomClampsToReadableRange() {
         let window = AppDelegate.makeReaderWindow(for: URL(fileURLWithPath: "/tmp/example.md"))
         defer { window.close() }
