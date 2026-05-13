@@ -1,8 +1,8 @@
 #!/bin/bash
-# geul — CLI entry point.
-# No args → TUI fuzzy finder (inline exec).
-# One interactive directory arg → TUI rooted at that directory.
-# Other args → GUI via LaunchServices (existing behavior).
+# gl - CLI entry point.
+# No args -> TUI fuzzy finder (inline exec).
+# One interactive directory arg -> TUI rooted at that directory.
+# Other args -> GUI via LaunchServices (existing behavior).
 
 set -eu
 
@@ -17,13 +17,13 @@ while [ -L "$src" ]; do
     fi
 done
 wrapper_dir="$(cd -P "$(dirname "$src")" && pwd)"
-# SPM은 Resources/를 .app/Contents/Resources/Resources/ 로 복사. 두 레벨 위로.
+# SPM copies Resources/ into .app/Contents/Resources/Resources/, so move two levels up.
 app_root="${wrapper_dir%/Contents/Resources/Resources}"
 app_macos="$app_root/Contents/MacOS/geul"
 
 if [[ ! -x "$app_macos" ]]; then
-    echo "geul: cannot locate app binary (tried: $app_macos)" >&2
-    echo "If /usr/local/bin/geul was copied instead of symlinked, reinstall via 'make install' or Homebrew cask." >&2
+    echo "gl: cannot locate app binary (tried: $app_macos)" >&2
+    echo "If /usr/local/bin/gl was copied instead of symlinked, reinstall via 'make install' or Homebrew cask." >&2
     exit 1
 fi
 
