@@ -16,7 +16,7 @@ final class CLIRouteTests: XCTestCase {
 
     private func route(_ userArgs: [String], interactive: Bool = true) -> CLIRoute {
         CLIMain.route(
-            arguments: ["gl"] + userArgs,
+            arguments: ["ge"] + userArgs,
             isInteractiveTerminal: interactive,
             currentDirectory: tempDir
         )
