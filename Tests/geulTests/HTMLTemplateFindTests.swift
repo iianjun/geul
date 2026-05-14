@@ -50,19 +50,23 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(html.contains("reader-align-right"))
     }
 
-    func testUpdateContentPreservesActiveFindQuery() {
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("findSnapshot"))
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("prepareForContentUpdate()"))
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("restoreAfterContentUpdate(findSnapshot)"))
+    func testUpdateContentPreservesActiveFindQuery() throws {
+        let mermaidScript = try Self.resourceText(HTMLTemplate.mermaidInitScriptPath)
+
+        XCTAssertTrue(mermaidScript.contains("findSnapshot"))
+        XCTAssertTrue(mermaidScript.contains("prepareForContentUpdate()"))
+        XCTAssertTrue(mermaidScript.contains("restoreAfterContentUpdate(findSnapshot)"))
     }
 
-    func testUpdateContentAwaitsMermaidBeforeRestoringFindQuery() {
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("async function updateContent(html)"))
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("await renderMermaidDiagrams(container)"))
+    func testUpdateContentAwaitsMermaidBeforeRestoringFindQuery() throws {
+        let mermaidScript = try Self.resourceText(HTMLTemplate.mermaidInitScriptPath)
+
+        XCTAssertTrue(mermaidScript.contains("async function updateContent(html)"))
+        XCTAssertTrue(mermaidScript.contains("await renderMermaidDiagrams(container)"))
     }
 
     func testMermaidZoomOverlayClosesBeforeContentAndThemeRerender() throws {
-        let mermaidScript = HTMLTemplate.mermaidInitScript
+        let mermaidScript = try Self.resourceText(HTMLTemplate.mermaidInitScriptPath)
 
         let updateStart = try XCTUnwrap(mermaidScript.range(of: "async function updateContent(html)"))
         let contentReplace = try XCTUnwrap(mermaidScript.range(
@@ -144,5 +148,15 @@ final class HTMLTemplateFindTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .appendingPathComponent("geul/MarkdownWebView.swift")
+    }
+
+    private static func resourceText(_ relativePath: String) throws -> String {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("geul")
+            .appendingPathComponent(relativePath)
+        return try String(contentsOf: url, encoding: .utf8)
     }
 }

@@ -65,9 +65,9 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertFalse(css.contains("letter-spacing: -0.015em;"))
     }
 
-    func testMermaidUsesCursorCodeBlockContainerAndThemeVariables() {
-        let loadingCSS = HTMLTemplate.loadingCSS
-        let mermaidScript = HTMLTemplate.mermaidInitScript
+    func testMermaidUsesCursorCodeBlockContainerAndThemeVariables() throws {
+        let loadingCSS = try Self.resourceText(HTMLTemplate.loadingStylesheetPath)
+        let mermaidScript = try Self.resourceText(HTMLTemplate.mermaidInitScriptPath)
 
         XCTAssertTrue(loadingCSS.contains(".mermaid-container {"))
         XCTAssertTrue(loadingCSS.contains("border-radius: var(--radius-lg);"))
@@ -81,8 +81,8 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertFalse(mermaidScript.contains("primaryColor: colors['--bg-secondary']"))
     }
 
-    func testMermaidZoomViewerUsesThemeAwareCSS() {
-        let loadingCSS = HTMLTemplate.loadingCSS
+    func testMermaidZoomViewerUsesThemeAwareCSS() throws {
+        let loadingCSS = try Self.resourceText(HTMLTemplate.loadingStylesheetPath)
 
         XCTAssertTrue(loadingCSS.contains(".mermaid-zoom-button"))
         XCTAssertTrue(loadingCSS.contains(".mermaid-zoom-overlay"))
@@ -96,8 +96,8 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertTrue(loadingCSS.contains("outline: 2px solid var(--accent);"))
     }
 
-    func testMermaidZoomViewerScriptInstallsControlsAndInteractions() {
-        let mermaidScript = HTMLTemplate.mermaidInitScript
+    func testMermaidZoomViewerScriptInstallsControlsAndInteractions() throws {
+        let mermaidScript = try Self.resourceText(HTMLTemplate.mermaidInitScriptPath)
 
         XCTAssertTrue(mermaidScript.contains("function installMermaidZoomControls(container)"))
         XCTAssertTrue(mermaidScript.contains("function openMermaidZoomOverlay(container, opener)"))
@@ -219,11 +219,32 @@ final class CursorDefaultThemeTests: XCTestCase {
             theme: lightTheme
         )
 
+        XCTAssertTrue(darkHTML.contains(#"<link id="geul-hljs" rel="stylesheet" href="Resources/styles/github-dark.min.css">"#))
         XCTAssertTrue(darkHTML.contains(#"<style id="geul-hljs-override">"#))
+        XCTAssertTrue(darkHTML.contains("window.__geulHljsHref"))
         XCTAssertTrue(darkHTML.contains("window.__geulHljsOverrideCSS"))
         XCTAssertTrue(darkHTML.contains(".hljs-comment"))
+        XCTAssertFalse(darkHTML.contains("window.__geulHljsCSS"))
+        XCTAssertTrue(lightHTML.contains(#"<link id="geul-hljs" rel="stylesheet" href="Resources/styles/github.min.css">"#))
         XCTAssertTrue(lightHTML.contains(#"<style id="geul-hljs-override"></style>"#))
         XCTAssertTrue(lightHTML.contains("window.__geulHljsOverrideCSS"))
+    }
+
+    func testComposedHTMLReferencesStaticResourcesByURL() {
+        let html = HTMLTemplate.compose(
+            body: "<pre><code></code></pre>",
+            title: "Resources",
+            theme: Theme(name: "Default Dark", colors: Self.cursorDarkColors)
+        )
+
+        XCTAssertTrue(html.contains(#"<link rel="stylesheet" href="Resources/styles/katex.min.css">"#))
+        XCTAssertTrue(html.contains(#"<link rel="stylesheet" href="Resources/styles/loading.css">"#))
+        XCTAssertTrue(html.contains(#"<script src="Resources/scripts/katex.min.js"></script>"#))
+        XCTAssertTrue(html.contains(#"<script src="Resources/scripts/auto-render.min.js"></script>"#))
+        XCTAssertTrue(html.contains(#"<script src="Resources/scripts/mermaid.min.js"></script>"#))
+        XCTAssertTrue(html.contains(#"<script src="Resources/scripts/mermaid-init.js"></script>"#))
+        XCTAssertFalse(html.contains("<style>.geul-loading"))
+        XCTAssertFalse(html.contains("function buildMermaidThemeVariables(colors)"))
     }
 
     @MainActor
@@ -265,4 +286,14 @@ final class CursorDefaultThemeTests: XCTestCase {
         "--border-strong": "#14141426",
         "--shadow-subtle": "none"
     ]
+
+    private static func resourceText(_ relativePath: String) throws -> String {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("geul")
+            .appendingPathComponent(relativePath)
+        return try String(contentsOf: url, encoding: .utf8)
+    }
 }

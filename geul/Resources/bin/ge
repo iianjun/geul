@@ -1,0 +1,37 @@
+#!/bin/bash
+# ge - CLI entry point.
+# No args -> TUI fuzzy finder (inline exec).
+# One interactive directory arg -> TUI rooted at that directory.
+# Other args -> GUI via LaunchServices (existing behavior).
+
+set -eu
+
+command_name="$(basename "$0")"
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+    dir="$(cd -P "$(dirname "$src")" && pwd)"
+    target="$(readlink "$src")"
+    if [[ $target = /* ]]; then
+        src="$target"
+    else
+        src="$dir/$target"
+    fi
+done
+wrapper_dir="$(cd -P "$(dirname "$src")" && pwd)"
+# SPM copies Resources/ into .app/Contents/Resources/Resources/, with this wrapper under bin/.
+app_root="${wrapper_dir%/Contents/Resources/Resources/bin}"
+app_macos="$app_root/Contents/MacOS/geul"
+
+if [[ ! -x "$app_macos" ]]; then
+    echo "$command_name: cannot locate app binary (tried: $app_macos)" >&2
+    echo "If /usr/local/bin/ge or /usr/local/bin/geul was copied instead of symlinked, reinstall via 'make install' or Homebrew cask." >&2
+    exit 1
+fi
+
+if [[ $# -eq 0 ]]; then
+    exec "$app_macos"
+elif [[ $# -eq 1 && -t 0 && -t 1 && -d "$1" ]]; then
+    exec "$app_macos" "$1"
+else
+    open -a "geul" "$@" --args --geul-opened-by-cli
+fi

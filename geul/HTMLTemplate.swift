@@ -7,16 +7,8 @@ enum HTMLTemplate {
         theme: Theme,
         readerAlignment: ReaderAlignment = .left
     ) -> String {
-        let highlightLightCSS = loadResource("github.min", ext: "css") ?? ""
-        let highlightDarkCSS = loadResource("github-dark.min", ext: "css") ?? ""
-        let katexCSS = loadResource("katex.min", ext: "css")
-        let katexJS = loadResource("katex.min", ext: "js")
-        let autoRenderJS = loadResource("auto-render.min", ext: "js")
-        let mermaidJS = loadResource("mermaid.min", ext: "js")
-        let hljsLightJSON = ThemeSanitizer.jsStringLiteral(highlightLightCSS)
-        let hljsDarkJSON = ThemeSanitizer.jsStringLiteral(highlightDarkCSS)
         let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
-        let initialHljs = hljsKey == "dark" ? highlightDarkCSS : highlightLightCSS
+        let initialHljsPath = highlightStylesheetPath(forHLJSVariantKey: hljsKey)
         let initialHighlightOverride = highlightOverrideCSS(forHLJSVariantKey: hljsKey)
         let cursorDarkHighlightOverrideJSON = ThemeSanitizer.jsStringLiteral(cursorDarkHighlightOverrideCSS)
         let sanitizedColors = ThemeSanitizer.sanitized(theme.colors)
@@ -31,10 +23,10 @@ enum HTMLTemplate {
             <title>\(title)</title>
             <style id="geul-theme">\(themeCSS(theme))</style>
             <style>\(baseCSS)</style>
-            <style id="geul-hljs">\(initialHljs)</style>
+            <link id="geul-hljs" rel="stylesheet" href="\(initialHljsPath)">
             <style id="geul-hljs-override">\(initialHighlightOverride)</style>
-            <style>\(katexCSS ?? "")</style>
-            <style>\(loadingCSS)</style>
+            <link rel="stylesheet" href="Resources/styles/katex.min.css">
+            <link rel="stylesheet" href="\(loadingStylesheetPath)">
         </head>
         <body>
             <article id="content" class="markdown-root markdown-body reader-align-\(readerAlignment.rawValue)">
@@ -42,13 +34,16 @@ enum HTMLTemplate {
             </article>
             <script>
             window.__geulCurrentColors = \(colorsJSON);
-            window.__geulHljsCSS = { default: \(hljsLightJSON), dark: \(hljsDarkJSON) };
+            window.__geulHljsHref = {
+                default: "\(highlightStylesheetPath(forHLJSVariantKey: "default"))",
+                dark: "\(highlightStylesheetPath(forHLJSVariantKey: "dark"))"
+            };
             window.__geulHljsOverrideCSS = { default: "", dark: \(cursorDarkHighlightOverrideJSON) };
             </script>
-            <script>\(katexJS ?? "")</script>
-            <script>\(autoRenderJS ?? "")</script>
-            <script>\(mermaidJS ?? "")</script>
-            <script>\(mermaidInitScript)</script>
+            <script src="Resources/scripts/katex.min.js"></script>
+            <script src="Resources/scripts/auto-render.min.js"></script>
+            <script src="Resources/scripts/mermaid.min.js"></script>
+            <script src="\(mermaidInitScriptPath)"></script>
             <script>\(findScript)</script>
         </body>
         </html>
@@ -72,24 +67,9 @@ enum HTMLTemplate {
         return String(data: data, encoding: .utf8) ?? "{}"
     }
 
-    private static let resourceBundle: Bundle = {
-        #if SWIFT_PACKAGE
-        return Bundle.module
-        #else
-        return Bundle.main
-        #endif
-    }()
-
-    private static func loadResource(_ name: String, ext: String) -> String? {
-        guard let url = resourceBundle.url(
-            forResource: name,
-            withExtension: ext,
-            subdirectory: "Resources"
-        ),
-              let content = try? String(contentsOf: url, encoding: .utf8)
-        else {
-            return nil
-        }
-        return content
+    static func highlightStylesheetPath(forHLJSVariantKey key: String) -> String {
+        key == "dark"
+            ? "Resources/styles/github-dark.min.css"
+            : "Resources/styles/github.min.css"
     }
 }

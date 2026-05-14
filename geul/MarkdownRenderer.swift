@@ -22,13 +22,21 @@ enum MarkdownRenderer {
         }
 
         // Load marked.js
-        if let url = resourceBundle.url(forResource: "marked.min", withExtension: "js", subdirectory: "Resources"),
+        if let url = resourceBundle.url(
+            forResource: "marked.min",
+            withExtension: "js",
+            subdirectory: "Resources/scripts"
+        ),
            let script = try? String(contentsOf: url, encoding: .utf8) {
             ctx.evaluateScript(script)
         }
 
         // Load highlight.js
-        if let url = resourceBundle.url(forResource: "highlight.min", withExtension: "js", subdirectory: "Resources"),
+        if let url = resourceBundle.url(
+            forResource: "highlight.min",
+            withExtension: "js",
+            subdirectory: "Resources/scripts"
+        ),
            let script = try? String(contentsOf: url, encoding: .utf8) {
             ctx.evaluateScript(script)
         }
