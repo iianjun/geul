@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-geul is a macOS-only app for viewing markdown files. Run `geul file.md` from the CLI to open the app and render the given markdown file. Each file opens in a new window.
+geul is a macOS-only app for viewing markdown files. Run `gl file.md` from the CLI to open the app and render the given markdown file. Each file opens in a new window.
 
 ## Build
 
@@ -24,16 +24,16 @@ swift build
 
 ### CLI Flow
 
-```
-geul file.md → /usr/local/bin/geul (shell wrapper)
-  → open -a "geul" file.md
-  → macOS LaunchServices → Apple Events
-  → AppDelegate.application(_:open:) → new NSWindow per file
+```text
+gl file.md -> /usr/local/bin/gl (shell wrapper)
+  -> open -a "geul" file.md
+  -> macOS LaunchServices -> Apple Events
+  -> AppDelegate.application(_:open:) -> new NSWindow per file
 ```
 
-- **Shell wrapper** (`geul/Resources/geul`): `open -a` 호출. 심링크가 아님 — `Bundle.main`이 항상 `.app` 번들을 가리키도록 보장
-- **Document Types** (`geul/Info.plist`): `.md` UTI 등록 → Apple Events로 파일 수신
-- **Multi-window**: 파일마다 독립 NSWindow. `WindowGroup` 미사용 — AppDelegate가 직접 관리
+- **Shell wrapper** (`geul/Resources/gl`): invokes `open -a "geul"`. It is a bundled wrapper, not a copied app binary, so `Bundle.main` continues to point at the `.app` bundle.
+- **Document Types** (`geul/Info.plist`): registers `.md` UTIs so files arrive through Apple Events.
+- **Multi-window**: each file gets an independent NSWindow. `WindowGroup` is not used; AppDelegate manages windows directly.
 
 ## Verification
 
@@ -50,7 +50,7 @@ make lint-fix    # auto-fix correctable violations
 
 ```bash
 make kill        # kill all running geul processes
-make install     # Xcode build + install CLI wrapper to /usr/local/bin/geul
+make install     # Xcode build + install CLI wrapper to /usr/local/bin/gl
 ```
 
 ### 3. Build & Test (XcodeBuildMCP)
