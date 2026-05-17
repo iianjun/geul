@@ -45,3 +45,5 @@ Secrets.xcconfig
 
 # Docs (specs & plans)
 docs/
+
+.codex
