@@ -42,14 +42,15 @@ enum TUIController {
             next.cursor = 0
             next.scrollOffset = 0
         case .arrow(.up):
-            next.cursor = max(0, next.cursor - 1)
+            let upperBound = max(0, next.visible.count - 1)
+            next.cursor = next.cursor == 0 ? upperBound : max(0, next.cursor - 1)
             next.scrollOffset = adjustScroll(cursor: next.cursor,
                                              offset: next.scrollOffset,
                                              total: next.visible.count,
                                              visibleHeight: visibleListHeight(next.winSize.rows))
         case .arrow(.down):
             let upperBound = max(0, next.visible.count - 1)
-            next.cursor = min(upperBound, next.cursor + 1)
+            next.cursor = next.cursor == upperBound ? 0 : min(upperBound, next.cursor + 1)
             next.scrollOffset = adjustScroll(cursor: next.cursor,
                                              offset: next.scrollOffset,
                                              total: next.visible.count,
