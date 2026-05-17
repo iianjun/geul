@@ -28,20 +28,21 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertEqual(theme.colors, Self.cursorLightColors)
     }
 
-    func testCursorDarkPaletteProducesExpectedCSSAndDarkHighlightVariant() {
+    func testCursorDarkPaletteProducesExpectedConfigAndDarkHighlightVariant() throws {
         let theme = Theme(name: "Default Dark", colors: Self.cursorDarkColors)
-        let css = HTMLTemplate.themeCSS(theme)
+        let html = HTMLTemplate.compose(body: "<p>Theme</p>", title: "Theme", theme: theme)
 
-        XCTAssertTrue(css.contains("--bg-primary: #141414;"))
-        XCTAssertTrue(css.contains("--bg-secondary: #1E1E1E;"))
-        XCTAssertTrue(css.contains("--accent: #81A1C1;"))
-        XCTAssertTrue(css.contains("--text-primary: #E4E4E4EB;"))
-        XCTAssertTrue(css.contains("--border: #E4E4E413;"))
+        XCTAssertTrue(html.contains(##""--bg-primary":"#141414""##))
+        XCTAssertTrue(html.contains(##""--bg-secondary":"#1E1E1E""##))
+        XCTAssertTrue(html.contains(##""--accent":"#81A1C1""##))
+        XCTAssertTrue(html.contains(##""--text-primary":"#E4E4E4EB""##))
+        XCTAssertTrue(html.contains(##""--border":"#E4E4E413""##))
+        XCTAssertTrue(html.contains(#""hljsTheme":"dark""#))
         XCTAssertEqual(ThemeSanitizer.hljsVariantKey(for: theme), "dark")
     }
 
-    func testBaseCSSUsesCursorMarkdownRootRules() {
-        let css = HTMLTemplate.baseCSS
+    func testBaseCSSUsesCursorMarkdownRootRules() throws {
+        let css = try Self.resourceString("css/globals.css")
 
         XCTAssertTrue(css.contains("font-size: 14px;"))
         XCTAssertTrue(css.contains("line-height: 22px;"))
@@ -65,128 +66,73 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertFalse(css.contains("letter-spacing: -0.015em;"))
     }
 
-    func testMermaidUsesCursorCodeBlockContainerAndThemeVariables() {
-        let loadingCSS = HTMLTemplate.loadingCSS
-        let mermaidScript = HTMLTemplate.mermaidInitScript
+    func testMermaidUsesCursorCodeBlockContainerAndThemeVariables() throws {
+        let css = try Self.resourceString("css/globals.css")
+        let runtime = try Self.resourceString("js/geul-runtime.js")
 
-        XCTAssertTrue(loadingCSS.contains(".mermaid-container {"))
-        XCTAssertTrue(loadingCSS.contains("border-radius: var(--radius-lg);"))
-        XCTAssertTrue(loadingCSS.contains("border: 1px solid var(--border);"))
-        XCTAssertTrue(loadingCSS.contains("background-color: var(--bg-primary);"))
-        XCTAssertFalse(loadingCSS.contains("box-shadow: var(--shadow-subtle);"))
-        XCTAssertTrue(mermaidScript.contains("primaryColor: colors['--bg-primary']"))
-        XCTAssertTrue(mermaidScript.contains("mainBkg: colors['--bg-primary']"))
-        XCTAssertTrue(mermaidScript.contains("nodeBorder: colors['--border-strong']"))
-        XCTAssertTrue(mermaidScript.contains("clusterBorder: colors['--border']"))
-        XCTAssertFalse(mermaidScript.contains("primaryColor: colors['--bg-secondary']"))
+        XCTAssertTrue(css.contains(".mermaid-container {"))
+        XCTAssertTrue(css.contains("border-radius: var(--radius-lg);"))
+        XCTAssertTrue(css.contains("border: 1px solid var(--border);"))
+        XCTAssertTrue(css.contains("background-color: var(--bg-primary);"))
+        XCTAssertFalse(css.contains("box-shadow: var(--shadow-subtle);"))
+        XCTAssertTrue(runtime.contains("primaryColor: colors['--bg-primary']"))
+        XCTAssertTrue(runtime.contains("mainBkg: colors['--bg-primary']"))
+        XCTAssertTrue(runtime.contains("nodeBorder: colors['--border-strong']"))
+        XCTAssertTrue(runtime.contains("clusterBorder: colors['--border']"))
+        XCTAssertFalse(runtime.contains("primaryColor: colors['--bg-secondary']"))
     }
 
-    func testHighlightOverrideUsesCursorTokenColors() {
-        let css = HTMLTemplate.cursorDarkHighlightOverrideCSS
+    func testHighlightOverrideUsesCursorTokenColors() throws {
+        let css = try Self.resourceString("css/globals.css")
 
-        XCTAssertTrue(css.contains("color: #82D2CE;"))
-        XCTAssertTrue(css.contains("color: #efb080;"))
-        XCTAssertTrue(css.contains("color: #e394dc;"))
-        XCTAssertTrue(css.contains("color: #AAA0FA;"))
-        XCTAssertTrue(css.contains("color: #E4E4E45E;"))
-        XCTAssertTrue(css.contains("""
-        .hljs-title.function_,
-        .hljs-title.class_ {
-            color: #efb080;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-title.class_.inherited__ {
-            color: #efb080;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-meta .hljs-string {
-            color: #e394dc;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-meta .hljs-keyword {
-            color: #82D2CE;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-doctag,
-        .hljs-template-tag,
-        .hljs-selector-pseudo {
-            color: #82D2CE;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-variable.language_ {
-            color: #AAA0FA;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-operator,
-        .hljs-selector-attr,
-        .hljs-selector-class,
-        .hljs-selector-id {
-            color: #AAA0FA;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-regexp {
-            color: #e394dc;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-code,
-        .hljs-formula,
-        .hljs-subst {
-            color: var(--text-primary);
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-emphasis {
-            color: var(--text-primary);
-            font-style: italic;
-        }
-        """))
-        XCTAssertTrue(css.contains("""
-        .hljs-strong {
-            color: var(--text-primary);
-            font-weight: bold;
-        }
-        """))
+        Self.assertScopedHighlightRule(css, selector: ".hljs-title.function_", color: "#efb080")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-title.class_", color: "#efb080")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-title.class_.inherited__", color: "#efb080")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-meta .hljs-string", color: "#e394dc")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-meta .hljs-keyword", color: "#82D2CE")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-doctag", color: "#82D2CE")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-template-tag", color: "#82D2CE")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-selector-pseudo", color: "#82D2CE")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-variable.language_", color: "#AAA0FA")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-operator", color: "#AAA0FA")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-selector-attr", color: "#AAA0FA")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-selector-class", color: "#AAA0FA")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-selector-id", color: "#AAA0FA")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-regexp", color: "#e394dc")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-code", color: "var(--text-primary)")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-formula", color: "var(--text-primary)")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-subst", color: "var(--text-primary)")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-emphasis", color: "var(--text-primary)")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-emphasis", property: "font-style", value: "italic")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-strong", color: "var(--text-primary)")
+        Self.assertScopedHighlightRule(css, selector: ".hljs-strong", property: "font-weight", value: "bold")
         XCTAssertFalse(css.contains("#c9d1d9"))
     }
 
-    func testHighlightOverrideOnlyAppliesToDarkHighlightVariant() {
-        XCTAssertEqual(HTMLTemplate.highlightOverrideCSS(forHLJSVariantKey: "default"), "")
-        XCTAssertEqual(HTMLTemplate.highlightOverrideCSS(forHLJSVariantKey: "light"), "")
-        XCTAssertEqual(
-            HTMLTemplate.highlightOverrideCSS(forHLJSVariantKey: "dark"),
-            HTMLTemplate.cursorDarkHighlightOverrideCSS
-        )
-    }
-
-    func testComposedHTMLScopesHighlightOverrideByInitialVariantAndRuntimeMap() {
-        let lightTheme = Theme(
-            name: "Light",
-            colors: Self.cursorDarkColors.merging(["--bg-primary": "#ffffff"]) { _, new in new }
+    func testHighlightOverrideOnlyAppliesToDarkHighlightVariant() throws {
+        let css = try Self.resourceString("css/globals.css")
+        let lightHTML = HTMLTemplate.compose(
+            body: "<pre><code></code></pre>",
+            title: "Light",
+            theme: Theme(
+                name: "Light",
+                colors: Self.cursorDarkColors.merging(["--bg-primary": "#ffffff"]) { _, new in new }
+            )
         )
         let darkHTML = HTMLTemplate.compose(
             body: "<pre><code></code></pre>",
             title: "Dark",
             theme: Theme(name: "Default Dark", colors: Self.cursorDarkColors)
         )
-        let lightHTML = HTMLTemplate.compose(
-            body: "<pre><code></code></pre>",
-            title: "Light",
-            theme: lightTheme
-        )
 
-        XCTAssertTrue(darkHTML.contains(#"<style id="geul-hljs-override">"#))
-        XCTAssertTrue(darkHTML.contains("window.__geulHljsOverrideCSS"))
-        XCTAssertTrue(darkHTML.contains(".hljs-comment"))
-        XCTAssertTrue(lightHTML.contains(#"<style id="geul-hljs-override"></style>"#))
-        XCTAssertTrue(lightHTML.contains("window.__geulHljsOverrideCSS"))
+        XCTAssertTrue(css.contains(#"html[data-hljs-theme="dark"] .hljs-comment"#))
+        XCTAssertFalse(css.contains(#"html[data-hljs-theme="default"] .hljs-comment"#))
+        XCTAssertTrue(lightHTML.contains(#"<html lang="en" data-hljs-theme="default">"#))
+        XCTAssertTrue(lightHTML.contains(#"id="geul-hljs-light">"#))
+        XCTAssertTrue(lightHTML.contains(#"id="geul-hljs-dark" disabled>"#))
+        XCTAssertTrue(darkHTML.contains(#"<html lang="en" data-hljs-theme="dark">"#))
+        XCTAssertTrue(darkHTML.contains(#"id="geul-hljs-light" disabled>"#))
+        XCTAssertTrue(darkHTML.contains(#"id="geul-hljs-dark">"#))
     }
 
     @MainActor
@@ -228,4 +174,61 @@ final class CursorDefaultThemeTests: XCTestCase {
         "--border-strong": "#14141426",
         "--shadow-subtle": "none"
     ]
+
+    private static func resourceString(_ relativePath: String) throws -> String {
+        try String(
+            contentsOf: repositoryRoot()
+                .appendingPathComponent("geul/Resources")
+                .appendingPathComponent(relativePath),
+            encoding: .utf8
+        )
+    }
+
+    private static func repositoryRoot() -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+    }
+
+    private static func assertScopedHighlightRule(
+        _ css: String,
+        selector: String,
+        color: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        assertScopedHighlightRule(
+            css,
+            selector: selector,
+            property: "color",
+            value: color,
+            file: file,
+            line: line
+        )
+    }
+
+    private static func assertScopedHighlightRule(
+        _ css: String,
+        selector: String,
+        property: String,
+        value: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let scopedSelector = #"html[data-hljs-theme="dark"] \#(selector)"#
+        let pattern = NSRegularExpression.escapedPattern(for: scopedSelector)
+            + #"[^{]*\{[^}]*"#
+            + NSRegularExpression.escapedPattern(for: property)
+            + #"\s*:\s*"#
+            + NSRegularExpression.escapedPattern(for: value)
+            + #"\s*;"#
+            + #"[^}]*\}"#
+        XCTAssertNotNil(
+            css.range(of: pattern, options: [.regularExpression]),
+            "Missing scoped highlight rule for \(selector) with \(property): \(value)",
+            file: file,
+            line: line
+        )
+    }
 }
