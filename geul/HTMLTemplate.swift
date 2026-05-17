@@ -1,78 +1,7 @@
 import Foundation
 
-enum HTMLTemplate {
-    static func compose(
-        body: String,
-        title: String,
-        theme: Theme,
-        readerAlignment: ReaderAlignment = .left
-    ) -> String {
-        let highlightLightCSS = loadResource("github.min", ext: "css") ?? ""
-        let highlightDarkCSS = loadResource("github-dark.min", ext: "css") ?? ""
-        let katexCSS = loadResource("katex.min", ext: "css")
-        let katexJS = loadResource("katex.min", ext: "js")
-        let autoRenderJS = loadResource("auto-render.min", ext: "js")
-        let mermaidJS = loadResource("mermaid.min", ext: "js")
-        let hljsLightJSON = ThemeSanitizer.jsStringLiteral(highlightLightCSS)
-        let hljsDarkJSON = ThemeSanitizer.jsStringLiteral(highlightDarkCSS)
-        let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
-        let initialHljs = hljsKey == "dark" ? highlightDarkCSS : highlightLightCSS
-        let initialHighlightOverride = highlightOverrideCSS(forHLJSVariantKey: hljsKey)
-        let cursorDarkHighlightOverrideJSON = ThemeSanitizer.jsStringLiteral(cursorDarkHighlightOverrideCSS)
-        let sanitizedColors = ThemeSanitizer.sanitized(theme.colors)
-        let colorsJSON = Self.encodeColorsJSON(sanitizedColors)
-
-        return """
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>\(title)</title>
-            <style id="geul-theme">\(themeCSS(theme))</style>
-            <style>\(baseCSS)</style>
-            <style id="geul-hljs">\(initialHljs)</style>
-            <style id="geul-hljs-override">\(initialHighlightOverride)</style>
-            <style>\(katexCSS ?? "")</style>
-            <style>\(loadingCSS)</style>
-        </head>
-        <body>
-            <article id="content" class="markdown-root markdown-body reader-align-\(readerAlignment.rawValue)">
-            \(body)
-            </article>
-            <script>
-            window.__geulCurrentColors = \(colorsJSON);
-            window.__geulHljsCSS = { default: \(hljsLightJSON), dark: \(hljsDarkJSON) };
-            window.__geulHljsOverrideCSS = { default: "", dark: \(cursorDarkHighlightOverrideJSON) };
-            </script>
-            <script>\(katexJS ?? "")</script>
-            <script>\(autoRenderJS ?? "")</script>
-            <script>\(mermaidJS ?? "")</script>
-            <script>\(mermaidInitScript)</script>
-            <script>\(findScript)</script>
-        </body>
-        </html>
-        """
-    }
-
-    static func themeCSS(_ theme: Theme) -> String {
-        let vars = ThemeSanitizer.sanitized(theme.colors)
-            .sorted { $0.key < $1.key }
-            .map { "    \($0.key): \($0.value);" }
-            .joined(separator: "\n")
-        return """
-        :root {
-        \(vars)
-        }
-        """
-    }
-
-    private static func encodeColorsJSON(_ colors: [String: String]) -> String {
-        let data = (try? JSONEncoder().encode(colors)) ?? Data("{}".utf8)
-        return String(data: data, encoding: .utf8) ?? "{}"
-    }
-
-    private static let resourceBundle: Bundle = {
+enum AppResource {
+    static let bundle: Bundle = {
         #if SWIFT_PACKAGE
         return Bundle.module
         #else
@@ -80,16 +9,114 @@ enum HTMLTemplate {
         #endif
     }()
 
-    private static func loadResource(_ name: String, ext: String) -> String? {
-        guard let url = resourceBundle.url(
-            forResource: name,
-            withExtension: ext,
-            subdirectory: "Resources"
-        ),
-              let content = try? String(contentsOf: url, encoding: .utf8)
-        else {
-            return nil
+    static var webBaseURL: URL? {
+        guard let resourceURL = bundle.resourceURL else { return nil }
+
+        let nestedResources = resourceURL.appendingPathComponent("Resources", isDirectory: true)
+        if directoryExists(at: nestedResources) {
+            return nestedResources
         }
-        return content
+
+        return resourceURL
+    }
+
+    static func url(_ relativePath: String) -> URL? {
+        guard let resourceURL = bundle.resourceURL else { return nil }
+
+        let candidates = [
+            resourceURL
+                .appendingPathComponent("Resources", isDirectory: true)
+                .appendingPathComponent(relativePath),
+            resourceURL.appendingPathComponent(relativePath)
+        ]
+
+        return candidates.first { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
+    static func string(_ relativePath: String) -> String? {
+        guard let url = url(relativePath) else { return nil }
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+
+    private static func directoryExists(at url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(
+            atPath: url.path,
+            isDirectory: &isDirectory
+        )
+        return exists && isDirectory.boolValue
+    }
+}
+
+enum HTMLTemplate {
+    static func compose(
+        body: String,
+        title: String,
+        theme: Theme,
+        readerAlignment: ReaderAlignment = .left
+    ) -> String {
+        let sanitizedColors = ThemeSanitizer.sanitized(theme.colors)
+        let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
+        let configJSON = encodeConfigJSON(
+            colors: sanitizedColors,
+            hljsTheme: hljsKey,
+            readerAlignment: readerAlignment
+        )
+        let lightDisabledAttribute = disabledAttribute(isDisabled: hljsKey == "dark")
+        let darkDisabledAttribute = disabledAttribute(isDisabled: hljsKey != "dark")
+
+        return """
+        <!DOCTYPE html>
+        <html lang="en" data-hljs-theme="\(hljsKey)">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>\(title)</title>
+            <link rel="stylesheet" href="css/globals.css">
+            <link rel="stylesheet" href="github.min.css" id="geul-hljs-light"\(lightDisabledAttribute)>
+            <link rel="stylesheet" href="github-dark.min.css" id="geul-hljs-dark"\(darkDisabledAttribute)>
+            <link rel="stylesheet" href="katex.min.css">
+        </head>
+        <body>
+            <article id="content" class="markdown-root markdown-body reader-align-\(readerAlignment.rawValue)">
+            \(body)
+            </article>
+            <script id="geul-config" type="application/json">
+            \(configJSON)
+            </script>
+            <script src="katex.min.js"></script>
+            <script src="auto-render.min.js"></script>
+            <script src="mermaid.min.js"></script>
+            <script src="js/geul-find.js"></script>
+            <script src="js/geul-runtime.js"></script>
+        </body>
+        </html>
+        """
+    }
+
+    private static func disabledAttribute(isDisabled: Bool) -> String {
+        isDisabled ? " disabled" : ""
+    }
+
+    private static func encodeConfigJSON(
+        colors: [String: String],
+        hljsTheme: String,
+        readerAlignment: ReaderAlignment
+    ) -> String {
+        let config = GeulConfig(
+            colors: colors,
+            hljsTheme: hljsTheme,
+            readerAlignment: readerAlignment.rawValue
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = (try? encoder.encode(config)) ?? Data("{}".utf8)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+
+    private struct GeulConfig: Encodable {
+        let colors: [String: String]
+        let hljsTheme: String
+        let readerAlignment: String
     }
 }
