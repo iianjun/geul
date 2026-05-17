@@ -50,11 +50,17 @@ final class TUIControllerStateTests: XCTestCase {
         XCTAssertEqual(state.cursor, 0)
     }
 
-    func testArrowDownClampsAtLast() {
+    func testArrowUpFromFirstWrapsToLast() {
+        var state = initialState(entries: [entry("a.md"), entry("b.md"), entry("c.md")])
+        state = TUIController.reduce(state: state, event: .arrow(.up))
+        XCTAssertEqual(state.cursor, 2)
+    }
+
+    func testArrowDownFromLastWrapsToFirst() {
         var state = initialState(entries: [entry("a.md"), entry("b.md")])
         state.cursor = 1
         state = TUIController.reduce(state: state, event: .arrow(.down))
-        XCTAssertEqual(state.cursor, 1)
+        XCTAssertEqual(state.cursor, 0)
     }
 
     func testQueryResetsCursorToZero() {
