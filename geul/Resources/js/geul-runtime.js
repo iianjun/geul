@@ -1,8 +1,60 @@
-import Foundation
+(function() {
+    var currentColors = {};
+    var currentHljsTheme = 'default';
+    var themeCSSVariables = [
+        '--bg-primary',
+        '--bg-secondary',
+        '--bg-code',
+        '--bg-code-border',
+        '--text-primary',
+        '--text-secondary',
+        '--text-tertiary',
+        '--accent',
+        '--accent-soft',
+        '--border',
+        '--border-strong',
+        '--shadow-subtle'
+    ];
 
-extension HTMLTemplate {
+    function readConfig() {
+        var el = document.getElementById('geul-config');
+        if (!el) return {};
 
-    static let mermaidInitScript = """
+        try {
+            return JSON.parse(el.textContent || '{}');
+        } catch(e) {
+            console.error('[geul] config parse failed:', e);
+            return {};
+        }
+    }
+
+    function applyThemeVariables(colors) {
+        colors = colors || {};
+        themeCSSVariables.forEach(function(key) {
+            document.documentElement.style.removeProperty(key);
+        });
+        Object.keys(colors).sort().forEach(function(key) {
+            document.documentElement.style.setProperty(key, colors[key]);
+        });
+    }
+
+    function setHighlightTheme(hljsKey) {
+        currentHljsTheme = hljsKey === 'dark' ? 'dark' : 'default';
+        document.documentElement.setAttribute('data-hljs-theme', currentHljsTheme);
+
+        var lightLink = document.getElementById('geul-hljs-light');
+        var darkLink = document.getElementById('geul-hljs-dark');
+        if (lightLink) lightLink.disabled = currentHljsTheme === 'dark';
+        if (darkLink) darkLink.disabled = currentHljsTheme !== 'dark';
+    }
+
+    function escapeHTML(text) {
+        return String(text == null ? '' : text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     function buildMermaidThemeVariables(colors) {
         colors = colors || {};
         return {
@@ -29,12 +81,14 @@ extension HTMLTemplate {
         mermaid.initialize({
             startOnLoad: false,
             theme: 'base',
-            themeVariables: buildMermaidThemeVariables(window.__geulCurrentColors),
+            themeVariables: buildMermaidThemeVariables(currentColors),
             securityLevel: 'loose'
         });
     }
 
     async function renderMermaidDiagrams(root) {
+        if (!root) return;
+
         var containers = root.querySelectorAll('.mermaid-container');
         if (containers.length === 0) return;
 
@@ -48,7 +102,7 @@ extension HTMLTemplate {
         mermaid.initialize({
             startOnLoad: false,
             theme: 'base',
-            themeVariables: buildMermaidThemeVariables(window.__geulCurrentColors),
+            themeVariables: buildMermaidThemeVariables(currentColors),
             securityLevel: 'loose'
         });
 
@@ -141,25 +195,9 @@ extension HTMLTemplate {
     }
 
     function setTheme(colors, hljsKey) {
-        window.__geulCurrentColors = colors;
-
-        var lines = Object.keys(colors).sort().map(function(k) {
-            return '    ' + k + ': ' + colors[k] + ';';
-        }).join('\\n');
-        var css = ':root {\\n' + lines + '\\n}';
-        var styleEl = document.getElementById('geul-theme');
-        if (styleEl) styleEl.textContent = css;
-
-        var hljs = document.getElementById('geul-hljs');
-        if (hljs && window.__geulHljsCSS) {
-            hljs.textContent = window.__geulHljsCSS[hljsKey] || window.__geulHljsCSS.default;
-        }
-
-        var hljsOverride = document.getElementById('geul-hljs-override');
-        if (hljsOverride) {
-            var overrides = window.__geulHljsOverrideCSS || {};
-            hljsOverride.textContent = overrides[hljsKey] || overrides.default || '';
-        }
+        currentColors = colors || {};
+        applyThemeVariables(currentColors);
+        setHighlightTheme(hljsKey);
 
         var content = document.getElementById('content');
         if (content) {
@@ -174,15 +212,43 @@ extension HTMLTemplate {
                         '<div class="bar"></div><div class="bar"></div>' +
                         '</div>' +
                         '<pre class="mermaid" style="display:none;">' +
-                        c.dataset.mermaidSource.replace(/&/g, '&amp;')
-                                              .replace(/</g, '&lt;')
-                                              .replace(/>/g, '&gt;') +
+                        escapeHTML(c.dataset.mermaidSource) +
                         '</pre>';
                 }
             });
             renderMermaidDiagrams(content);
         }
     }
+
+    function setReaderAlignment(alignment) {
+        var allowed = ['left', 'center', 'right'];
+        var value = allowed.indexOf(alignment) === -1 ? 'left' : alignment;
+        var content = document.getElementById('content');
+        if (!content) return;
+
+        content.classList.remove(
+            'reader-align-left',
+            'reader-align-center',
+            'reader-align-right'
+        );
+        content.classList.add('reader-align-' + value);
+    }
+
+    var config = readConfig();
+    currentColors = config.colors || {};
+    applyThemeVariables(currentColors);
+    setHighlightTheme(config.hljsTheme);
+    setReaderAlignment(config.readerAlignment || 'left');
+
+    window.geul = {
+        updateContent: updateContent,
+        setTheme: setTheme,
+        setReaderAlignment: setReaderAlignment
+    };
+
+    window.updateContent = updateContent;
+    window.setTheme = setTheme;
+    window.setReaderAlignment = setReaderAlignment;
 
     document.addEventListener('DOMContentLoaded', function() {
         try {
@@ -193,5 +259,4 @@ extension HTMLTemplate {
         }
         renderMath(document.getElementById('content'));
     });
-    """
-}
+})();

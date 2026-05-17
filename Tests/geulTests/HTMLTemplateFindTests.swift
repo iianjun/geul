@@ -29,14 +29,17 @@ final class HTMLTemplateFindTests: XCTestCase {
 
         XCTAssertFalse(html.contains("<style id=\"geul-find-style\">"))
         XCTAssertFalse(html.contains("mark.geul-find-match"))
-        XCTAssertTrue(html.contains("window.geulFind = {"))
+        XCTAssertTrue(html.contains(#"<script src="js/geul-find.js"></script>"#))
+        XCTAssertFalse(html.contains("window.geulFind = {"))
     }
 
-    func testMarkdownBodyDefaultsToLeftAlignedFullWindowWidth() {
-        XCTAssertTrue(HTMLTemplate.baseCSS.contains("margin: 0;"))
-        XCTAssertTrue(HTMLTemplate.baseCSS.contains(".markdown-root.reader-align-center,"))
-        XCTAssertTrue(HTMLTemplate.baseCSS.contains("max-width: 800px"))
-        XCTAssertTrue(HTMLTemplate.baseCSS.contains("margin: 0 auto"))
+    func testMarkdownBodyDefaultsToLeftAlignedFullWindowWidth() throws {
+        let css = try Self.resourceString("css/globals.css")
+
+        XCTAssertTrue(css.contains("margin: 0;"))
+        XCTAssertTrue(css.contains(".markdown-root.reader-align-center,"))
+        XCTAssertTrue(css.contains("max-width: 800px"))
+        XCTAssertTrue(css.contains("margin: 0 auto"))
     }
 
     func testComposeAppliesReaderAlignmentClass() {
@@ -50,49 +53,61 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(html.contains("reader-align-right"))
     }
 
-    func testUpdateContentPreservesActiveFindQuery() {
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("findSnapshot"))
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("prepareForContentUpdate()"))
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("restoreAfterContentUpdate(findSnapshot)"))
+    func testUpdateContentPreservesActiveFindQuery() throws {
+        let runtime = try Self.resourceString("js/geul-runtime.js")
+
+        XCTAssertTrue(runtime.contains("findSnapshot"))
+        XCTAssertTrue(runtime.contains("prepareForContentUpdate()"))
+        XCTAssertTrue(runtime.contains("restoreAfterContentUpdate(findSnapshot)"))
     }
 
-    func testUpdateContentAwaitsMermaidBeforeRestoringFindQuery() {
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("async function updateContent(html)"))
-        XCTAssertTrue(HTMLTemplate.mermaidInitScript.contains("await renderMermaidDiagrams(container)"))
+    func testUpdateContentAwaitsMermaidBeforeRestoringFindQuery() throws {
+        let runtime = try Self.resourceString("js/geul-runtime.js")
+
+        XCTAssertTrue(runtime.contains("async function updateContent(html)"))
+        XCTAssertTrue(runtime.contains("await renderMermaidDiagrams(container)"))
     }
 
-    func testFindScriptExcludesSVGAndDoesNotMutateRenderedText() {
-        XCTAssertTrue(HTMLTemplate.findScript.contains("parent.closest('svg')"))
-        XCTAssertTrue(HTMLTemplate.findScript.contains("createTreeWalker"))
-        XCTAssertTrue(HTMLTemplate.findScript.contains("countMatches"))
-        XCTAssertFalse(HTMLTemplate.findScript.contains("createElement('mark')"))
-        XCTAssertFalse(HTMLTemplate.findScript.contains("splitText"))
-        XCTAssertFalse(HTMLTemplate.findScript.contains("replaceChild"))
-        XCTAssertFalse(HTMLTemplate.findScript.contains("mark.geul-find-match"))
+    func testFindScriptExcludesSVGAndDoesNotMutateRenderedText() throws {
+        let findScript = try Self.resourceString("js/geul-find.js")
+
+        XCTAssertTrue(findScript.contains("parent.closest('svg')"))
+        XCTAssertTrue(findScript.contains("createTreeWalker"))
+        XCTAssertTrue(findScript.contains("countMatches"))
+        XCTAssertFalse(findScript.contains("createElement('mark')"))
+        XCTAssertFalse(findScript.contains("splitText"))
+        XCTAssertFalse(findScript.contains("replaceChild"))
+        XCTAssertFalse(findScript.contains("mark.geul-find-match"))
     }
 
-    func testFindScriptUsesDeterministicCaseFolding() {
-        XCTAssertTrue(HTMLTemplate.findScript.contains("toLowerCase()"))
-        XCTAssertTrue(HTMLTemplate.findScript.contains("query.toLowerCase()"))
-        XCTAssertFalse(HTMLTemplate.findScript.contains("toLocaleLowerCase"))
+    func testFindScriptUsesDeterministicCaseFolding() throws {
+        let findScript = try Self.resourceString("js/geul-find.js")
+
+        XCTAssertTrue(findScript.contains("toLowerCase()"))
+        XCTAssertTrue(findScript.contains("query.toLowerCase()"))
+        XCTAssertFalse(findScript.contains("toLocaleLowerCase"))
     }
 
-    func testFindScriptUsesOriginalTextOffsetsForCaseInsensitiveMatches() {
-        XCTAssertFalse(HTMLTemplate.findScript.contains("haystack.indexOf"))
-        XCTAssertTrue(HTMLTemplate.findScript.contains("text.slice(i, i + query.length).toLowerCase()"))
+    func testFindScriptUsesOriginalTextOffsetsForCaseInsensitiveMatches() throws {
+        let findScript = try Self.resourceString("js/geul-find.js")
+
+        XCTAssertFalse(findScript.contains("haystack.indexOf"))
+        XCTAssertTrue(findScript.contains("text.slice(i, i + query.length).toLowerCase()"))
     }
 
     func testLiveReloadAwaitsAsyncUpdateContentFromSwift() throws {
         let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
 
         XCTAssertTrue(source.contains("callAsyncJavaScript("))
-        XCTAssertTrue(source.contains("return await updateContent(html);"))
+        XCTAssertTrue(source.contains("return await window.geul.updateContent(html);"))
     }
 
-    func testFindScriptVersionsQueriesAroundAsyncLiveReload() {
-        XCTAssertTrue(HTMLTemplate.findScript.contains("version: 0"))
-        XCTAssertTrue(HTMLTemplate.findScript.contains("state.version += 1"))
-        XCTAssertTrue(HTMLTemplate.findScript.contains("state.version === snapshot.version"))
+    func testFindScriptVersionsQueriesAroundAsyncLiveReload() throws {
+        let findScript = try Self.resourceString("js/geul-find.js")
+
+        XCTAssertTrue(findScript.contains("version: 0"))
+        XCTAssertTrue(findScript.contains("state.version += 1"))
+        XCTAssertTrue(findScript.contains("state.version === snapshot.version"))
     }
 
     func testMarkdownWebViewUsesNativeWebKitFindForHighlighting() throws {
@@ -105,11 +120,30 @@ final class HTMLTemplateFindTests: XCTestCase {
 
     func testMarkdownWebViewAppliesReaderAlignmentWithoutReloading() throws {
         let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
+        let runtime = try Self.resourceString("js/geul-runtime.js")
 
         XCTAssertTrue(source.contains("applyReaderAlignment"))
-        XCTAssertTrue(source.contains("content.classList.remove("))
-        XCTAssertTrue(source.contains("reader-align-center"))
-        XCTAssertTrue(source.contains("content.classList.add"))
+        XCTAssertTrue(source.contains("window.geul.setReaderAlignment(alignment);"))
+        XCTAssertTrue(runtime.contains("function setReaderAlignment(alignment)"))
+        XCTAssertTrue(runtime.contains("content.classList.remove("))
+        XCTAssertTrue(runtime.contains("reader-align-center"))
+        XCTAssertTrue(runtime.contains("content.classList.add"))
+    }
+
+    private static func resourceString(_ relativePath: String) throws -> String {
+        try String(
+            contentsOf: repositoryRoot()
+                .appendingPathComponent("geul/Resources")
+                .appendingPathComponent(relativePath),
+            encoding: .utf8
+        )
+    }
+
+    private static func repositoryRoot() -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
     }
 
     private static func markdownWebViewSourceURL() -> URL {

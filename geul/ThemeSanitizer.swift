@@ -77,15 +77,4 @@ enum ThemeSanitizer {
         }
         return 0.2126 * red + 0.7152 * green + 0.0722 * blue
     }
-
-    /// Safely embed a string as a JS string literal using JSON escaping.
-    static func jsStringLiteral(_ value: String) -> String {
-        guard let data = try? JSONSerialization.data(
-            withJSONObject: value,
-            options: .fragmentsAllowed
-        ), let literal = String(data: data, encoding: .utf8) else {
-            return "\"\""
-        }
-        return literal
-    }
 }

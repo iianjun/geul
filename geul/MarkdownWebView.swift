@@ -45,7 +45,7 @@ struct MarkdownWebView: NSViewRepresentable {
         context.coordinator.lastAppliedTheme = theme
         context.coordinator.lastAppliedReaderAlignment = readerAlignment
         context.coordinator.queueFindRequestIfNeeded(findRequest)
-        webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
+        webView.loadHTMLString(html, baseURL: AppResource.webBaseURL)
         return webView
     }
 
@@ -61,7 +61,7 @@ struct MarkdownWebView: NSViewRepresentable {
             context.coordinator.lastAppliedReaderAlignment = readerAlignment
             context.coordinator.queueFindRequestIfNeeded(findRequest)
             webView.alphaValue = 0
-            webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
+            webView.loadHTMLString(html, baseURL: AppResource.webBaseURL)
             return
         }
 
@@ -170,7 +170,7 @@ struct MarkdownWebView: NSViewRepresentable {
                     guard let webView else { return }
                     onMarkdownReload(markdown)
                     webView.callAsyncJavaScript(
-                        "return await updateContent(html);",
+                        WebViewScriptBridge.updateContentScript,
                         arguments: ["html": body],
                         in: nil,
                         in: .page
@@ -224,7 +224,7 @@ struct MarkdownWebView: NSViewRepresentable {
         }
 
         private func applyFindRequest(_ request: FindRequest, in webView: WKWebView) {
-            guard let script = Self.findScript(for: request.action) else {
+            guard let script = WebViewScriptBridge.findScript(for: request.action) else {
                 lastAppliedFindRequestID = request.id
                 return
             }
@@ -336,7 +336,7 @@ struct MarkdownWebView: NSViewRepresentable {
 
         private func clearNativeFindSelection(in webView: WKWebView) {
             webView.evaluateJavaScript(
-                "window.getSelection && window.getSelection().removeAllRanges();",
+                WebViewScriptBridge.clearSelectionScript,
                 completionHandler: nil
             )
         }
@@ -349,40 +349,6 @@ struct MarkdownWebView: NSViewRepresentable {
         private func publishFindResult(_ result: FindResult) {
             DispatchQueue.main.async { [onFindResult] in
                 onFindResult(result)
-            }
-        }
-
-        private static func jsStringEncode(_ string: String) -> String? {
-            guard let data = try? JSONSerialization.data(
-                withJSONObject: string,
-                options: .fragmentsAllowed
-            ) else { return nil }
-            return String(data: data, encoding: .utf8)
-        }
-
-        private static func findScript(for action: FindAction) -> String? {
-            let fallback = "({ query: '', currentIndex: -1, total: 0 })"
-
-            switch action {
-            case .none:
-                return nil
-            case .search(let query):
-                guard let encoded = jsStringEncode(query) else { return fallback }
-                return """
-                (window.geulFind ? window.geulFind.search(\(encoded)) : \(fallback))
-                """
-            case .next:
-                return """
-                (window.geulFind ? window.geulFind.next() : \(fallback))
-                """
-            case .previous:
-                return """
-                (window.geulFind ? window.geulFind.previous() : \(fallback))
-                """
-            case .clear:
-                return """
-                (window.geulFind ? window.geulFind.clear() : \(fallback))
-                """
             }
         }
 
@@ -423,27 +389,65 @@ struct MarkdownWebView: NSViewRepresentable {
     }
 }
 
+private enum WebViewScriptBridge {
+    static let updateContentScript = "return await window.geul.updateContent(html);"
+    static let setThemeScript = "window.geul.setTheme(colors, hljsKey);"
+    static let setReaderAlignmentScript = "window.geul.setReaderAlignment(alignment);"
+    static let clearSelectionScript = "window.getSelection && window.getSelection().removeAllRanges();"
+
+    private static let fallbackFindResult = "({ query: '', currentIndex: -1, total: 0 })"
+
+    static func findScript(for action: FindAction) -> String? {
+        switch action {
+        case .none:
+            return nil
+        case .search(let query):
+            guard let encoded = jsonLiteral(query) else { return fallbackFindResult }
+            return """
+            (window.geulFind ? window.geulFind.search(\(encoded)) : \(fallbackFindResult))
+            """
+        case .next:
+            return """
+            (window.geulFind ? window.geulFind.next() : \(fallbackFindResult))
+            """
+        case .previous:
+            return """
+            (window.geulFind ? window.geulFind.previous() : \(fallbackFindResult))
+            """
+        case .clear:
+            return """
+            (window.geulFind ? window.geulFind.clear() : \(fallbackFindResult))
+            """
+        }
+    }
+
+    private static func jsonLiteral(_ value: String) -> String? {
+        guard let data = try? JSONSerialization.data(
+            withJSONObject: value,
+            options: .fragmentsAllowed
+        ) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+}
+
 extension MarkdownWebView.Coordinator {
     func applyTheme(_ theme: Theme) {
-        // Queue until the first navigation completes; otherwise the
-        // <style id="geul-theme"> element doesn't exist yet.
         guard let webView, webView.isLoading == false else {
             pendingThemeApply = theme
             return
         }
-        do {
-            let sanitized = ThemeSanitizer.sanitized(theme.colors)
-            let data = try JSONEncoder().encode(sanitized)
-            guard let colorsJSON = String(data: data, encoding: .utf8) else { return }
-            let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
-            let script = "setTheme(\(colorsJSON), '\(hljsKey)')"
-            webView.evaluateJavaScript(script) { _, error in
-                if let error {
-                    print("[geul] setTheme error: \(error)")
-                }
+
+        let sanitized = ThemeSanitizer.sanitized(theme.colors)
+        let hljsKey = ThemeSanitizer.hljsVariantKey(for: theme)
+        webView.callAsyncJavaScript(
+            WebViewScriptBridge.setThemeScript,
+            arguments: ["colors": sanitized, "hljsKey": hljsKey],
+            in: nil,
+            in: .page
+        ) { result in
+            if case .failure(let error) = result {
+                print("[geul] setTheme error: \(error)")
             }
-        } catch {
-            print("[geul] Failed to encode theme colors: \(error)")
         }
     }
 
@@ -453,21 +457,13 @@ extension MarkdownWebView.Coordinator {
             return
         }
 
-        let alignmentClass = "reader-align-\(alignment.rawValue)"
-        let script = """
-        (() => {
-            const content = document.getElementById('content');
-            if (!content) { return; }
-            content.classList.remove(
-                'reader-align-left',
-                'reader-align-center',
-                'reader-align-right'
-            );
-            content.classList.add('\(alignmentClass)');
-        })();
-        """
-        webView.evaluateJavaScript(script) { _, error in
-            if let error {
+        webView.callAsyncJavaScript(
+            WebViewScriptBridge.setReaderAlignmentScript,
+            arguments: ["alignment": alignment.rawValue],
+            in: nil,
+            in: .page
+        ) { result in
+            if case .failure(let error) = result {
                 print("[geul] applyReaderAlignment error: \(error)")
             }
         }
