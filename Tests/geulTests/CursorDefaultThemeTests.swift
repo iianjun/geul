@@ -135,6 +135,15 @@ final class CursorDefaultThemeTests: XCTestCase {
         XCTAssertTrue(darkHTML.contains(#"id="geul-hljs-dark">"#))
     }
 
+    func testHighlightedCodeBlockPaddingResetAppliesInsideMarkdownContainers() throws {
+        let css = try Self.resourceString("css/globals.css")
+
+        Self.assertHighlightCodeBlockRule(css, selector: ".markdown-root pre code.hljs", property: "padding", value: "0")
+        Self.assertHighlightCodeBlockRule(css, selector: ".markdown-body pre code.hljs", property: "padding", value: "0")
+        XCTAssertFalse(css.contains(#"html[data-hljs-theme="default"] pre code.hljs"#))
+        XCTAssertFalse(css.contains(#"html[data-hljs-theme="dark"] pre code.hljs"#))
+    }
+
     @MainActor
     func testHardcodedDefaultDarkFallbackMatchesCursorDarkPalette() {
         XCTAssertEqual(ThemeStore.hardcodedDarkColors, Self.cursorDarkColors)
@@ -203,6 +212,29 @@ final class CursorDefaultThemeTests: XCTestCase {
             selector: selector,
             property: "color",
             value: color,
+            file: file,
+            line: line
+        )
+    }
+
+    private static func assertHighlightCodeBlockRule(
+        _ css: String,
+        selector: String,
+        property: String,
+        value: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let pattern = NSRegularExpression.escapedPattern(for: selector)
+            + #"[^{}]*\{[^}]*"#
+            + NSRegularExpression.escapedPattern(for: property)
+            + #"\s*:\s*"#
+            + NSRegularExpression.escapedPattern(for: value)
+            + #"\s*;"#
+            + #"[^}]*\}"#
+        XCTAssertNotNil(
+            css.range(of: pattern, options: [.regularExpression]),
+            "Missing highlight code block rule for \(selector) with \(property): \(value)",
             file: file,
             line: line
         )
