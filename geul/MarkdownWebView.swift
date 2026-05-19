@@ -294,13 +294,30 @@ struct MarkdownWebView: NSViewRepresentable {
         private func restoreNativeFindAfterContentUpdate(from value: Any?, in webView: WKWebView) {
             guard let result = Self.findResult(from: value) else { return }
 
-            runNativeFindIfNeeded(
-                query: result.query,
-                backwards: false,
-                result: result,
-                requestID: lastAppliedFindRequestID,
-                in: webView
-            )
+            webView.evaluateJavaScript(
+                WebViewScriptBridge.captureScrollPositionScript
+            ) { [weak self, weak webView] scrollSnapshot, _ in
+                guard let self, let webView else { return }
+
+                self.runNativeFindIfNeeded(
+                    query: result.query,
+                    backwards: false,
+                    result: result,
+                    requestID: self.lastAppliedFindRequestID,
+                    in: webView
+                ) {
+                    webView.callAsyncJavaScript(
+                        WebViewScriptBridge.restoreScrollPositionScript,
+                        arguments: ["snapshot": scrollSnapshot ?? NSNull()],
+                        in: nil,
+                        in: .page
+                    ) { result in
+                        if case .failure(let error) = result {
+                            print("[geul] restore scroll error: \(error)")
+                        }
+                    }
+                }
+            }
         }
 
         private func runNativeFindIfNeeded(
@@ -308,11 +325,13 @@ struct MarkdownWebView: NSViewRepresentable {
             backwards: Bool,
             result: FindResult,
             requestID: Int,
-            in webView: WKWebView
+            in webView: WKWebView,
+            completion: (() -> Void)? = nil
         ) {
             guard !query.isEmpty, result.hasMatches else {
                 clearNativeFindSelection(in: webView)
                 publishFindResult(result)
+                completion?()
                 return
             }
 
@@ -323,7 +342,10 @@ struct MarkdownWebView: NSViewRepresentable {
 
             webView.find(query, configuration: configuration) { [weak self] nativeResult in
                 guard let self else { return }
-                guard self.lastAppliedFindRequestID == requestID else { return }
+                guard self.lastAppliedFindRequestID == requestID else {
+                    completion?()
+                    return
+                }
 
                 if nativeResult.matchFound {
                     self.publishFindResult(result)
@@ -331,6 +353,7 @@ struct MarkdownWebView: NSViewRepresentable {
                     let emptyResult = FindResult(query: query, currentIndex: -1, total: 0)
                     self.publishFindResult(emptyResult)
                 }
+                completion?()
             }
         }
 
@@ -391,8 +414,10 @@ struct MarkdownWebView: NSViewRepresentable {
 
 private enum WebViewScriptBridge {
     static let updateContentScript = "return await window.geul.updateContent(html);"
-    static let setThemeScript = "window.geul.setTheme(colors, hljsKey);"
+    static let setThemeScript = "return await window.geul.setTheme(colors, hljsKey);"
     static let setReaderAlignmentScript = "window.geul.setReaderAlignment(alignment);"
+    static let captureScrollPositionScript = "window.geul.captureScrollPosition();"
+    static let restoreScrollPositionScript = "window.geul.restoreScrollPosition(snapshot);"
     static let clearSelectionScript = "window.getSelection && window.getSelection().removeAllRanges();"
 
     private static let fallbackFindResult = "({ query: '', currentIndex: -1, total: 0 })"

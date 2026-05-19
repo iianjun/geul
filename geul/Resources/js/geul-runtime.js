@@ -172,7 +172,26 @@
         });
     }
 
+    function captureScrollPosition() {
+        return {
+            x: window.scrollX || window.pageXOffset || 0,
+            y: window.scrollY || window.pageYOffset || 0
+        };
+    }
+
+    function restoreScrollPosition(snapshot) {
+        if (!snapshot) return;
+
+        var scrollingElement = document.scrollingElement || document.documentElement;
+        var maxX = Math.max(0, scrollingElement.scrollWidth - window.innerWidth);
+        var maxY = Math.max(0, scrollingElement.scrollHeight - window.innerHeight);
+        var x = Math.min(Math.max(Number(snapshot.x) || 0, 0), maxX);
+        var y = Math.min(Math.max(Number(snapshot.y) || 0, 0), maxY);
+        window.scrollTo(x, y);
+    }
+
     async function updateContent(html) {
+        var scrollSnapshot = captureScrollPosition();
         var findSnapshot = window.geulFind
             ? window.geulFind.prepareForContentUpdate()
             : null;
@@ -188,35 +207,43 @@
         renderMath(container);
 
         if (window.geulFind) {
-            return window.geulFind.restoreAfterContentUpdate(findSnapshot);
+            var findResult = window.geulFind.restoreAfterContentUpdate(findSnapshot);
+            restoreScrollPosition(scrollSnapshot);
+            return findResult;
         }
 
+        restoreScrollPosition(scrollSnapshot);
         return null;
     }
 
-    function setTheme(colors, hljsKey) {
-        currentColors = colors || {};
-        applyThemeVariables(currentColors);
-        setHighlightTheme(hljsKey);
+    async function setTheme(colors, hljsKey) {
+        var scrollSnapshot = captureScrollPosition();
+        try {
+            currentColors = colors || {};
+            applyThemeVariables(currentColors);
+            setHighlightTheme(hljsKey);
 
-        var content = document.getElementById('content');
-        if (content) {
-            var containers = content.querySelectorAll('.mermaid-container');
-            containers.forEach(function(c) {
-                c.classList.remove('rendered');
-                c.classList.remove('mermaid-error');
-                if (c.dataset.mermaidSource) {
-                    c.innerHTML =
-                        '<div class="geul-loading">' +
-                        '<div class="bar"></div><div class="bar"></div>' +
-                        '<div class="bar"></div><div class="bar"></div>' +
-                        '</div>' +
-                        '<pre class="mermaid" style="display:none;">' +
-                        escapeHTML(c.dataset.mermaidSource) +
-                        '</pre>';
-                }
-            });
-            renderMermaidDiagrams(content);
+            var content = document.getElementById('content');
+            if (content) {
+                var containers = content.querySelectorAll('.mermaid-container');
+                containers.forEach(function(c) {
+                    c.classList.remove('rendered');
+                    c.classList.remove('mermaid-error');
+                    if (c.dataset.mermaidSource) {
+                        c.innerHTML =
+                            '<div class="geul-loading">' +
+                            '<div class="bar"></div><div class="bar"></div>' +
+                            '<div class="bar"></div><div class="bar"></div>' +
+                            '</div>' +
+                            '<pre class="mermaid" style="display:none;">' +
+                            escapeHTML(c.dataset.mermaidSource) +
+                            '</pre>';
+                    }
+                });
+                await renderMermaidDiagrams(content);
+            }
+        } finally {
+            restoreScrollPosition(scrollSnapshot);
         }
     }
 
@@ -243,7 +270,9 @@
     window.geul = {
         updateContent: updateContent,
         setTheme: setTheme,
-        setReaderAlignment: setReaderAlignment
+        setReaderAlignment: setReaderAlignment,
+        captureScrollPosition: captureScrollPosition,
+        restoreScrollPosition: restoreScrollPosition
     };
 
     window.updateContent = updateContent;
