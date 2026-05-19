@@ -449,7 +449,8 @@ sup {
     margin: 0;
 }
 
-html[data-hljs-theme="dark"] pre code.hljs {
+.markdown-root pre code.hljs,
+.markdown-body pre code.hljs {
     padding: 0;
     background: transparent;
     color: var(--text-primary);
