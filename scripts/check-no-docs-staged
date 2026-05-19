@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+staged_docs=$(git diff --cached --name-only -- docs/)
+
+if [ -z "$staged_docs" ]; then
+  exit 0
+fi
+
+cat >&2 <<EOF
+Commit blocked: docs/ is local-only and must not be committed.
+
+Staged docs paths:
+$staged_docs
+
+Unstage them with:
+  git restore --staged -- docs/
+EOF
+
+exit 1
