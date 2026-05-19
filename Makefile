@@ -1,10 +1,20 @@
-.PHONY: lint lint-fix build build-xcode kill install
+.PHONY: lint lint-fix build build-xcode kill install install-hooks check-no-docs-staged test-repo-policy
 
 lint:
 	swiftlint lint --strict
 
 lint-fix:
 	swiftlint lint --fix
+
+check-no-docs-staged:
+	@scripts/check-no-docs-staged
+
+test-repo-policy:
+	@sh Tests/RepoPolicyTests/NoDocsPreCommitTest.sh
+
+install-hooks:
+	git config core.hooksPath .githooks
+	@echo "Installed Git hooks: core.hooksPath=.githooks"
 
 build:
 	swift build
