@@ -44,4 +44,13 @@ final class CLIWrapperResourceTests: XCTestCase {
         XCTAssertFalse(content.contains("/usr/local/bin/gl"))
         XCTAssertFalse(content.contains("gl: cannot locate app binary"))
     }
+
+    func testCLIWrapperOpensResolvedAppBundleForFileArguments() throws {
+        let wrapper = resourcesDirectory.appendingPathComponent("ge")
+        let content = try String(contentsOf: wrapper, encoding: .utf8)
+
+        XCTAssertTrue(content.contains(#"app_root="${wrapper_dir%/Contents/Resources/Resources}""#))
+        XCTAssertTrue(content.contains(#"open -a "$app_root" "$@" --args --geul-opened-by-cli"#))
+        XCTAssertFalse(content.contains(#"open -a "geul" "$@" --args --geul-opened-by-cli"#))
+    }
 }

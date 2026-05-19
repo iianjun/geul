@@ -147,7 +147,7 @@ enum TUIController {
     private static func launchGUI(for url: URL) -> Int32 {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        proc.arguments = ["-a", "geul", url.path]
+        proc.arguments = ["-a", Bundle.main.bundleURL.path, url.path, "--args", "--geul-opened-by-cli"]
         // 실패 메시지가 TUI 복원 후 사용자 터미널에 안정적으로 보이도록 stderr 를 파이프로
         let errPipe = Pipe()
         proc.standardError = errPipe
@@ -163,7 +163,7 @@ enum TUIController {
 
         guard proc.terminationStatus == 0 else {
             let errData = (try? errPipe.fileHandleForReading.readToEnd()) ?? Data()
-            var msg = "geul: `open -a geul` exited with status \(proc.terminationStatus)\n"
+            var msg = "geul: `open -a \(Bundle.main.bundleURL.path)` exited with status \(proc.terminationStatus)\n"
             if !errData.isEmpty, let errString = String(data: errData, encoding: .utf8),
                !errString.isEmpty {
                 msg += "open stderr: \(errString)"
