@@ -33,5 +33,5 @@ if [[ $# -eq 0 ]]; then
 elif [[ $# -eq 1 && -t 0 && -t 1 && -d "$1" ]]; then
     exec "$app_macos" "$1"
 else
-    open -a "geul" "$@" --args --geul-opened-by-cli
+    open -a "$app_root" "$@" --args --geul-opened-by-cli
 fi

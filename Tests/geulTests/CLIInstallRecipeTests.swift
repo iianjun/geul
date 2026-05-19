@@ -12,13 +12,25 @@ final class CLIInstallRecipeTests: XCTestCase {
     func testInstallRecipeLinksGeAndGeulCommands() throws {
         let content = try String(contentsOf: makefileURL, encoding: .utf8)
 
-        XCTAssertTrue(content.contains("WRAPPER=\"$$APP/Contents/Resources/Resources/ge\""))
+        XCTAssertTrue(content.contains("INSTALL_APP=\"/Applications/geul.app\""))
+        XCTAssertTrue(content.contains("WRAPPER=\"$$INSTALL_APP/Contents/Resources/Resources/ge\""))
         XCTAssertTrue(content.contains("PRIMARY=\"/usr/local/bin/ge\""))
         XCTAssertTrue(content.contains("FALLBACK=\"/usr/local/bin/geul\""))
         XCTAssertTrue(content.contains("LEGACY=\"/usr/local/bin/gl\""))
         XCTAssertTrue(content.contains("ln -sf \"$$WRAPPER\" \"$$PRIMARY\""))
         XCTAssertTrue(content.contains("ln -sf \"$$WRAPPER\" \"$$FALLBACK\""))
         XCTAssertTrue(content.contains("Installed: /usr/local/bin/ge and /usr/local/bin/geul"))
+    }
+
+    func testInstallRecipeCopiesAppBundleToApplications() throws {
+        let content = try String(contentsOf: makefileURL, encoding: .utf8)
+
+        XCTAssertTrue(content.contains("BUILT_APP=\"$$BUILT/geul.app\""))
+        XCTAssertTrue(content.contains("/usr/bin/ditto \"$$BUILT_APP\" \"$$INSTALL_APP\""))
+        XCTAssertTrue(content.contains("/usr/bin/touch \"$$INSTALL_APP\""))
+        XCTAssertTrue(content.contains("CFBundleIdentifier"))
+        XCTAssertTrue(content.contains("com.geul.app"))
+        XCTAssertTrue(content.contains("LaunchServices -> $$INSTALL_APP"))
     }
 
     func testInstallRecipeNoLongerInstallsGl() throws {

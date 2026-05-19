@@ -105,4 +105,18 @@ final class TUIControllerStateTests: XCTestCase {
         state = TUIController.reduce(state: state, event: .arrow(.down))
         XCTAssertEqual(state.cursor, 0)
     }
+
+    func testTUILaunchUsesCurrentAppBundleInsteadOfNameLookup() throws {
+        let controller = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("geul/TUI/TUIController.swift")
+        let content = try String(contentsOf: controller, encoding: .utf8)
+
+        XCTAssertTrue(content.contains(
+            #"proc.arguments = ["-a", Bundle.main.bundleURL.path, url.path, "--args", "--geul-opened-by-cli"]"#
+        ))
+        XCTAssertFalse(content.contains(#"proc.arguments = ["-a", "geul", url.path]"#))
+    }
 }
