@@ -68,6 +68,35 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(runtime.contains("await renderMermaidDiagrams(container)"))
     }
 
+    func testUpdateContentPreservesScrollPositionAroundDOMPatch() throws {
+        let runtime = try Self.resourceString("js/geul-runtime.js")
+        let updateContent = try Self.sourceRange(
+            in: runtime,
+            from: "async function updateContent(html)",
+            to: "async function setTheme(colors, hljsKey)"
+        )
+
+        XCTAssertTrue(updateContent.contains("var scrollSnapshot = captureScrollPosition();"))
+        XCTAssertTrue(updateContent.contains("restoreScrollPosition(scrollSnapshot);"))
+        XCTAssertLessThan(
+            try XCTUnwrap(updateContent.range(of: "restoreAfterContentUpdate(findSnapshot)")?.lowerBound),
+            try XCTUnwrap(updateContent.range(of: "restoreScrollPosition(scrollSnapshot);")?.lowerBound)
+        )
+    }
+
+    func testThemeChangePreservesScrollPositionAroundThemePatch() throws {
+        let runtime = try Self.resourceString("js/geul-runtime.js")
+        let setTheme = try Self.sourceRange(
+            in: runtime,
+            from: "async function setTheme(colors, hljsKey)",
+            to: "function setReaderAlignment(alignment)"
+        )
+
+        XCTAssertTrue(setTheme.contains("var scrollSnapshot = captureScrollPosition();"))
+        XCTAssertTrue(setTheme.contains("restoreScrollPosition(scrollSnapshot);"))
+        XCTAssertTrue(setTheme.contains("await renderMermaidDiagrams(content)"))
+    }
+
     func testFindScriptExcludesSVGAndDoesNotMutateRenderedText() throws {
         let findScript = try Self.resourceString("js/geul-find.js")
 
@@ -118,6 +147,18 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(source.contains("clearNativeFindSelection"))
     }
 
+    func testMarkdownWebViewRestoresNativeFindWithoutChangingScroll() throws {
+        let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
+        let restoreNativeFind = try Self.sourceRange(
+            in: source,
+            from: "private func restoreNativeFindAfterContentUpdate",
+            to: "private func runNativeFindIfNeeded"
+        )
+
+        XCTAssertTrue(restoreNativeFind.contains("captureScrollPositionScript"))
+        XCTAssertTrue(restoreNativeFind.contains("restoreScrollPositionScript"))
+    }
+
     func testMarkdownWebViewAppliesReaderAlignmentWithoutReloading() throws {
         let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
         let runtime = try Self.resourceString("js/geul-runtime.js")
@@ -137,6 +178,12 @@ final class HTMLTemplateFindTests: XCTestCase {
                 .appendingPathComponent(relativePath),
             encoding: .utf8
         )
+    }
+
+    private static func sourceRange(in source: String, from start: String, to end: String) throws -> String {
+        let startRange = try XCTUnwrap(source.range(of: start))
+        let endRange = try XCTUnwrap(source.range(of: end, range: startRange.upperBound..<source.endIndex))
+        return String(source[startRange.lowerBound..<endRange.lowerBound])
     }
 
     private static func repositoryRoot() -> URL {
