@@ -1,10 +1,17 @@
 #!/bin/bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
+require_env GEUL_DEVELOPMENT_TEAM
 ensure_project_root
 
 if [[ ! -d "$APP_PATH" ]]; then
     echo "error: build the exported app first with scripts/release/build.sh" >&2
+    exit 1
+fi
+
+SIGNING_IDENTITY="$(security find-identity -v -p codesigning | awk -F '"' -v team="$GEUL_DEVELOPMENT_TEAM" '$2 ~ "Developer ID Application:" && $2 ~ "\\(" team "\\)" { print $2; exit }')"
+if [[ -z "$SIGNING_IDENTITY" ]]; then
+    echo "error: missing Developer ID Application signing identity for team $GEUL_DEVELOPMENT_TEAM" >&2
     exit 1
 fi
 
@@ -21,6 +28,8 @@ hdiutil create \
     -ov \
     -format UDZO \
     "$DMG_PATH"
+
+codesign --force --sign "$SIGNING_IDENTITY" --timestamp "$DMG_PATH"
 
 cp "$DMG_PATH" "$STABLE_DMG_PATH"
 shasum -a 256 "$DMG_PATH" | tee "$SHA_PATH"

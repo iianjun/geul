@@ -1,6 +1,6 @@
 cask "geul" do
   version "1.0.0"
-  sha256 "028d08bb7bc6b2bd33118d096291577498569120b948673090491e66ef596a0e"
+  sha256 "c59dbc8d80d281bc1ef92b18893e98da6f0353cdf84729a9dc6bbbd2bbc91c21"
 
   url "https://github.com/hasungjun/geul/releases/download/v#{version}/geul-#{version}.dmg"
   name "geul"

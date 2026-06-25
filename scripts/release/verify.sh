@@ -20,7 +20,7 @@ fi
 
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 xcrun stapler validate "$DMG_PATH"
-spctl --assess --type open --verbose "$DMG_PATH"
+spctl --assess --type open --context context:primary-signature --verbose "$DMG_PATH"
 shasum -a 256 --check "$SHA_PATH"
 
 tmp_dir="$(mktemp -d)"
