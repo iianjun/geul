@@ -80,9 +80,20 @@
         return nodes;
     }
 
-    function countNodeMatches(node, query) {
+    function buildRenderedTextIndex(container) {
+        var text = '';
+
+        textNodes(container).forEach(function(node) {
+            text += node.nodeValue;
+        });
+
+        return {
+            text: text
+        };
+    }
+
+    function countTextMatches(text, query) {
         var count = 0;
-        var text = node.nodeValue;
         var needle = query.toLowerCase();
 
         if (needle.length === 0) {
@@ -111,12 +122,8 @@
             return 0;
         }
 
-        var total = 0;
-        textNodes(root).forEach(function(node) {
-            total += countNodeMatches(node, query);
-        });
-
-        return total;
+        var index = buildRenderedTextIndex(root);
+        return countTextMatches(index.text, query);
     }
 
     function activate(index) {

@@ -102,6 +102,8 @@ final class HTMLTemplateFindTests: XCTestCase {
 
         XCTAssertTrue(findScript.contains("parent.closest('svg')"))
         XCTAssertTrue(findScript.contains("createTreeWalker"))
+        XCTAssertTrue(findScript.contains("buildRenderedTextIndex"))
+        XCTAssertTrue(findScript.contains("countTextMatches"))
         XCTAssertTrue(findScript.contains("countMatches"))
         XCTAssertFalse(findScript.contains("createElement('mark')"))
         XCTAssertFalse(findScript.contains("splitText"))
@@ -145,6 +147,19 @@ final class HTMLTemplateFindTests: XCTestCase {
         XCTAssertTrue(source.contains("WKFindConfiguration"))
         XCTAssertTrue(source.contains("webView.find("))
         XCTAssertTrue(source.contains("clearNativeFindSelection"))
+    }
+
+    func testMarkdownWebViewPreservesJavaScriptFindResultWhenNativeFindMisses() throws {
+        let source = try String(contentsOf: Self.markdownWebViewSourceURL(), encoding: .utf8)
+        let runNativeFind = try Self.sourceRange(
+            in: source,
+            from: "private func runNativeFindIfNeeded",
+            to: "private func clearNativeFindSelection"
+        )
+
+        XCTAssertTrue(runNativeFind.contains("webView.find(query, configuration: configuration)"))
+        XCTAssertFalse(runNativeFind.contains("FindResult(query: query, currentIndex: -1, total: 0)"))
+        XCTAssertFalse(runNativeFind.contains("emptyResult"))
     }
 
     func testMarkdownWebViewRestoresNativeFindWithoutChangingScroll() throws {
