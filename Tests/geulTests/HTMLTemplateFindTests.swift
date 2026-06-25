@@ -102,6 +102,8 @@ final class HTMLTemplateFindTests: XCTestCase {
 
         XCTAssertTrue(findScript.contains("parent.closest('svg')"))
         XCTAssertTrue(findScript.contains("createTreeWalker"))
+        XCTAssertTrue(findScript.contains("buildRenderedTextIndex"))
+        XCTAssertTrue(findScript.contains("countTextMatches"))
         XCTAssertTrue(findScript.contains("countMatches"))
         XCTAssertFalse(findScript.contains("createElement('mark')"))
         XCTAssertFalse(findScript.contains("splitText"))
