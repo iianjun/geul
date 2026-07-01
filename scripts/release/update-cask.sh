@@ -26,6 +26,8 @@ cask "geul" do
     strategy :github_latest
   end
 
+  depends_on macos: :sonoma
+
   app "geul.app"
   binary "#{appdir}/geul.app/Contents/Resources/Resources/ge", target: "ge"
   binary "#{appdir}/geul.app/Contents/Resources/Resources/ge", target: "geul"
