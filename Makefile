@@ -1,4 +1,4 @@
-.PHONY: lint lint-fix build build-xcode kill install install-hooks check-no-docs-staged test-repo-policy
+.PHONY: lint lint-fix build build-xcode kill install install-hooks check-no-docs-staged test-repo-policy release-build release-package release-notarize release-verify release-cask release-github
 
 lint:
 	swiftlint lint --strict
@@ -84,3 +84,21 @@ install: build-xcode
 	done; \
 	$$LSREG -f "$$INSTALL_APP"; \
 	echo "Installed: /usr/local/bin/ge and /usr/local/bin/geul (LaunchServices -> $$INSTALL_APP)"
+
+release-build:
+	scripts/release/build.sh
+
+release-package:
+	scripts/release/package-dmg.sh
+
+release-notarize:
+	scripts/release/notarize.sh
+
+release-verify:
+	scripts/release/verify.sh
+
+release-cask:
+	scripts/release/update-cask.sh
+
+release-github:
+	scripts/release/github-release.sh
