@@ -340,19 +340,14 @@ struct MarkdownWebView: NSViewRepresentable {
             configuration.caseSensitive = false
             configuration.wraps = true
 
-            webView.find(query, configuration: configuration) { [weak self] nativeResult in
+            webView.find(query, configuration: configuration) { [weak self] _ in
                 guard let self else { return }
                 guard self.lastAppliedFindRequestID == requestID else {
                     completion?()
                     return
                 }
 
-                if nativeResult.matchFound {
-                    self.publishFindResult(result)
-                } else {
-                    let emptyResult = FindResult(query: query, currentIndex: -1, total: 0)
-                    self.publishFindResult(emptyResult)
-                }
+                self.publishFindResult(result)
                 completion?()
             }
         }
