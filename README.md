@@ -19,7 +19,7 @@ brew install --cask geul
 Download the latest DMG from GitHub Releases:
 
 ```text
-https://github.com/hasungjun/geul/releases/latest
+https://github.com/iianjun/geul/releases/latest
 ```
 
 ## Usage

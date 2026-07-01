@@ -16,10 +16,10 @@ cask "geul" do
   version "$VERSION"
   sha256 "$sha256"
 
-  url "https://github.com/hasungjun/geul/releases/download/v#{version}/geul-#{version}.dmg"
+  url "https://github.com/iianjun/geul/releases/download/v#{version}/geul-#{version}.dmg"
   name "geul"
   desc "Markdown viewer for CLI-first developers"
-  homepage "https://github.com/hasungjun/geul"
+  homepage "https://github.com/iianjun/geul"
 
   livecheck do
     url :url

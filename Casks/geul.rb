@@ -1,11 +1,11 @@
 cask "geul" do
   version "1.0.0"
-  sha256 "14f74c6b7a02d529fa5b9cdb41a890e51d75e1ccc98acd43723f949ef3e1533a"
+  sha256 "8958e76b14539ba484fabcafb1bbfb268bc482658bbcf00a2f4e9e63704824b2"
 
-  url "https://github.com/hasungjun/geul/releases/download/v#{version}/geul-#{version}.dmg"
+  url "https://github.com/iianjun/geul/releases/download/v#{version}/geul-#{version}.dmg"
   name "geul"
   desc "Markdown viewer for CLI-first developers"
-  homepage "https://github.com/hasungjun/geul"
+  homepage "https://github.com/iianjun/geul"
 
   livecheck do
     url :url
