@@ -3,23 +3,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 ensure_project_root
 
-if [[ ! -f "$DMG_PATH" ]]; then
-    echo "error: missing release artifact at $DMG_PATH" >&2
-    exit 1
-fi
-
-if [[ ! -f "$SHA_PATH" ]]; then
-    echo "error: missing checksum at $SHA_PATH" >&2
-    exit 1
-fi
-
 if [[ ! -f "$STABLE_DMG_PATH" ]]; then
     echo "error: missing stable release artifact at $STABLE_DMG_PATH" >&2
-    exit 1
-fi
-
-if [[ ! -f "$STABLE_SHA_PATH" ]]; then
-    echo "error: missing stable checksum at $STABLE_SHA_PATH" >&2
     exit 1
 fi
 
@@ -46,10 +31,7 @@ fi
 git push origin "$TAG"
 
 gh release create "$TAG" \
-    "$DMG_PATH" \
-    "$SHA_PATH" \
     "$STABLE_DMG_PATH" \
-    "$STABLE_SHA_PATH" \
     --draft \
     --title "geul $VERSION" \
     --notes-file CHANGELOG.md
