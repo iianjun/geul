@@ -6,9 +6,17 @@ geul is a macOS Markdown viewer for CLI-first developers.
 
 ### Homebrew
 
-geul is distributed through Homebrew Cask only. There is no Homebrew formula, so use `--cask`:
+geul is distributed through the `iianjun/geul` Homebrew Cask tap. There is no Homebrew formula, so use `--cask`:
 
 ```bash
+brew tap iianjun/geul
+brew install --cask geul
+```
+
+If Homebrew reports `Refusing to load cask ... from untrusted tap`, trust the tap once and rerun the cask install:
+
+```bash
+brew trust iianjun/geul
 brew install --cask geul
 ```
 
